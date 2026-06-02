@@ -21,9 +21,17 @@ def load_env():
     return env_dict
 
 env_vars = load_env()
-DISCORD_TOKEN = env_vars.get("DISCORD_TOKEN")
-DISCORD_CHANNEL_ID = env_vars.get("BSC_DISCORD_CHANNEL_ID")
-DB_FILE = env_vars.get("DB_PATH", "whitelabel.db")
+
+def get_env(key, default=None):
+    val = os.getenv(key)
+    if val is not None:
+        return val
+    return env_vars.get(key, default)
+
+DISCORD_TOKEN = get_env("DISCORD_TOKEN")
+DISCORD_CHANNEL_ID = get_env("BSC_DISCORD_CHANNEL_ID")
+DB_FILE = get_env("DB_PATH", "whitelabel.db")
+
 
 def send_discord_message(content, embed=None, chain='bsc'):
     # 1. Fetch all active white-label configs
@@ -65,7 +73,7 @@ def send_discord_message(content, embed=None, chain='bsc'):
             print(f"Error reading whitelabel configs from DB: {e}")
 
     # 2. Send to default production channel ONLY if it's NOT registered as a white-label channel
-    default_channel_id = env_vars.get("DISCORD_CHANNEL_ID" if chain == 'sol' else "BSC_DISCORD_CHANNEL_ID")
+    default_channel_id = get_env("DISCORD_CHANNEL_ID" if chain == 'sol' else "BSC_DISCORD_CHANNEL_ID")
     if default_channel_id and default_channel_id not in wl_channels:
         _send_message_direct(default_channel_id, content, embed)
 
