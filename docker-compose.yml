@@ -33,6 +33,7 @@ services:
       - .env
     environment:
       - DB_PATH=/app/db/whitelabel.db
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./db:/app/db
     command: python3 cto_watchdog.py
@@ -45,9 +46,11 @@ services:
       - .env
     environment:
       - DB_PATH=/app/db/whitelabel.db
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./db:/app/db
     command: python3 bsc_cto_watchdog.py
 
 volumes:
   db:
+
