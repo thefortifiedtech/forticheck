@@ -211,14 +211,22 @@ export async function handleWhiteLabelCommands(message: Message, isBsc: boolean)
     if (message.author.bot || !message.guild) return false;
 
     const content = message.content.trim();
-    if (!content.startsWith('!')) return false;
+    if (!content.startsWith('!ps-')) return false;
 
-    const args = content.slice(1).split(/\s+/);
+    const args = content.slice(4).split(/\s+/);
     const command = args[0].toLowerCase();
     const commandArg = args.slice(1).join(' ').trim();
 
     const allowedCommands = ['register', 'registerbsc', 'setname', 'settitle', 'setfooter', 'status'];
     if (!allowedCommands.includes(command)) return false;
+
+    // Route commands to prevent duplicate processing by solana-bot and bsc-bot:
+    // - bsc-bot (isBsc === true) only handles 'registerbsc'
+    // - solana-bot (isBsc === false) handles 'register', 'setname', 'settitle', 'setfooter', and 'status'
+    const isTargetBscCommand = command === 'registerbsc';
+    if (isTargetBscCommand !== isBsc) {
+        return true; // Intercepted, but ignored by this bot instance to prevent double execution/replies
+    }
 
     // Check permissions: only administrators or guild owners should be allowed to customize the bot
     const member = message.member;
@@ -230,7 +238,7 @@ export async function handleWhiteLabelCommands(message: Message, isBsc: boolean)
     try {
         if (command === 'register' || command === 'registerbsc') {
             if (!commandArg) {
-                await message.reply(`❌ Please provide a license key. Usage: \`!${command} <license_key>\``);
+                await message.reply(`❌ Please provide a license key. Usage: \`!ps-${command} <license_key>\``);
                 return true;
             }
 
@@ -258,7 +266,7 @@ export async function handleWhiteLabelCommands(message: Message, isBsc: boolean)
             config.isActive = true;
             config.activatedAt = Math.floor(Date.now() / 1000);
 
-            const isRegisteringBsc = isBsc || command === 'registerbsc';
+            const isRegisteringBsc = command === 'registerbsc';
             if (isRegisteringBsc) {
                 config.bscChannelId = message.channel.id;
             } else {
@@ -272,21 +280,21 @@ export async function handleWhiteLabelCommands(message: Message, isBsc: boolean)
                 `• License: \`${commandArg.slice(0, 8)}...${commandArg.slice(-4)}\`\n` +
                 `• Alert Channel: <#${message.channel.id}>\n\n` +
                 `You can now customize the bot with these commands:\n` +
-                `• \`!setname <bot_name>\` - Set bot nickname in this server\n` +
-                `• \`!settitle <prefix>\` - Set custom alert title prefix\n` +
-                `• \`!setfooter <text>\` - Set custom alert footer text\n` +
-                `• \`!status\` - View current configuration`);
+                `• \`!ps-setname <bot_name>\` - Set bot nickname in this server\n` +
+                `• \`!ps-settitle <prefix>\` - Set custom alert title prefix\n` +
+                `• \`!ps-setfooter <text>\` - Set custom alert footer text\n` +
+                `• \`!ps-status\` - View current configuration`);
             return true;
         }
 
         if (command === 'setname') {
             const config = getWhiteLabelConfig(message.guild.id);
             if (!config || !config.isActive) {
-                await message.reply("❌ This server is not registered. Please register first using `!register <license_key>`.");
+                await message.reply("❌ This server is not registered. Please register first using `!ps-register <license_key>`.");
                 return true;
             }
             if (!commandArg) {
-                await message.reply("❌ Please specify a name. Usage: `!setname <bot_name>`.");
+                await message.reply("❌ Please specify a name. Usage: `!ps-setname <bot_name>`.");
                 return true;
             }
             config.botName = commandArg;
@@ -306,7 +314,7 @@ export async function handleWhiteLabelCommands(message: Message, isBsc: boolean)
         if (command === 'settitle') {
             const config = getWhiteLabelConfig(message.guild.id);
             if (!config || !config.isActive) {
-                await message.reply("❌ This server is not registered. Please register first using `!register <license_key>`.");
+                await message.reply("❌ This server is not registered. Please register first using `!ps-register <license_key>`.");
                 return true;
             }
             config.customEmbedTitle = commandArg || null;
@@ -323,7 +331,7 @@ export async function handleWhiteLabelCommands(message: Message, isBsc: boolean)
         if (command === 'setfooter') {
             const config = getWhiteLabelConfig(message.guild.id);
             if (!config || !config.isActive) {
-                await message.reply("❌ This server is not registered. Please register first using `!register <license_key>`.");
+                await message.reply("❌ This server is not registered. Please register first using `!ps-register <license_key>`.");
                 return true;
             }
             config.customFooter = commandArg || null;
@@ -340,7 +348,7 @@ export async function handleWhiteLabelCommands(message: Message, isBsc: boolean)
         if (command === 'status') {
             const config = getWhiteLabelConfig(message.guild.id);
             if (!config) {
-                await message.reply("❌ This server is not registered. Please register first using `!register <license_key>`.");
+                await message.reply("❌ This server is not registered. Please register first using `!ps-register <license_key>`.");
                 return true;
             }
             const maskedKey = config.licenseKey ? `${config.licenseKey.slice(0, 8)}...${config.licenseKey.slice(-4)}` : 'None';
