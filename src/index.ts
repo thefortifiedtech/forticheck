@@ -389,10 +389,11 @@ client.on(Events.MessageCreate, async (message) => {
     const wasWlCommand = await handleWhiteLabelCommands(message, false);
     if (wasWlCommand) return;
 
-    const prefix = '!check';
-    if (message.content.startsWith(prefix)) {
-        const args = message.content.slice(prefix.length).trim().split(/ +/);
-        const tokenAddress = args[0];
+    const args = message.content.trim().split(/ +/);
+    const command = args[0].toLowerCase();
+
+    if (command === '!check') {
+        const tokenAddress = args[1];
 
         if (!tokenAddress) {
             await message.reply("Please provide a token address. Usage: `!check <token_address>`");
