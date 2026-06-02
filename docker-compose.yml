@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  solana-bot:
+    build: .
+    container_name: forticheck-solana-bot
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/db/whitelabel.db
+    volumes:
+      - ./db:/app/db
+    command: node dist/index.js
+
+  bsc-bot:
+    build: .
+    container_name: forticheck-bsc-bot
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/db/whitelabel.db
+    volumes:
+      - ./db:/app/db
+    command: node dist/bsc-index.js
+
+  solana-watchdog:
+    build: .
+    container_name: forticheck-solana-watchdog
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/db/whitelabel.db
+    volumes:
+      - ./db:/app/db
+    command: python3 cto_watchdog.py
+
+  bsc-watchdog:
+    build: .
+    container_name: forticheck-bsc-watchdog
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/db/whitelabel.db
+    volumes:
+      - ./db:/app/db
+    command: python3 bsc_cto_watchdog.py
+
+volumes:
+  db:

@@ -1,0 +1,79 @@
+ Auditing Token Rug Pull: Configuring GMGN API and auditing token GUA14pT5yYpUkWLpWV4V3cXiNGhy1tKQ7tfNwn9Apump.
+
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell Configure GMGN API key and fetch all necessary data for the token audit.                                                                                                                                                      │
+│                                                                                                                                                                                                                                        │
+│ Blocked: command substitution detected in shell command.                                                                                                                                                                               │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell Configure GMGN API key and fetch core token and security data.                                                                                                                                                                │
+│                                                                                                                                                                                                                                        │
+│ ... first 796 lines hidden (Ctrl+O to show) ...                                                                                                                                                                                        │
+│ 2M9ZzedsLRr","amount":"0.632870562","timestamp":1778119849,"tx_hash":"4D                                                                                                                                                               │
+│ JxJkRWZDxCo6fAfMHrUG2AaeJ1snK2K93KgzLhwHu4a3Zdyd9djtFrUPCvdhkjxyK5yVJTrW                                                                                                                                                               │
+│ zHBxnt6zRdDCGt"},"token_transfer":{"name":null,"address":"","timestamp":                                                                                                                                                               │
+│ 0,"tx_hash":"","type":"buy"},"token_transfer_in":{"name":null,"address":                                                                                                                                                               │
+│ "","timestamp":0,"tx_hash":"","type":"buy"},"token_transfer_out":{"name"                                                                                                                                                               │
+│ :null,"address":"","timestamp":0,"tx_hash":"","type":"sell"},"tags":["fr                                                                                                                                                               │
+│ esh_wallet"],"maker_token_tags":["creator","dev_team","bundler","sniper"                                                                                                                                                               │
+│ ,"paper_hands"],"name":null,"avatar":null,"twitter_username":null,"twitt                                                                                                                                                               │
+│ er_name":null,"created_at":0}]}                                                                                                                                                                                                        │
+│ Output too long and was saved to: /home/shawn/.gemini/tmp/shawn/tool-outputs/session-f0ec10ba-e6c4-4c75-9dc3-be7202c12119/run_shell_command_1778126132430_0.txt                                                                        │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell gmgn-cli market kline --chain sol --address GUA14pT5yYpUkWLpWV4V3cXiNGhy1tKQ7tfNwn9Apump --resolution 1m --limit 100 --raw                                                                                                    │
+│                                                                                                                                                                                                                                        │
+│ error: unknown option '--limit'                                                                                                                                                                                                        │
+│                                                                                                                                                                                                                                        │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell gmgn-cli market kline --chain sol --address GUA14pT5yYpUkWLpWV4V3cXiNGhy1tKQ7tfNwn9Apump --resolution 5m --raw                                                                                                                │
+│                                                                                                                                                                                                                                        │
+│ ... first 109 lines hidden (Ctrl+O to show) ...                                                                                                                                                                                        │
+│ 43806","low":"0.0000020299672","volume":"16.92661372","source":"","amoun                                                                                                                                                               │
+│ t":"8338367.972835"},{"time":1778123700000,"open":"0.0000020299672","clo                                                                                                                                                               │
+│ se":"0.0000020391259","high":"0.0000020391259","low":"0.0000020299672","                                                                                                                                                               │
+│ volume":"0.86970472","source":"","amount":"426508.590917"},{"time":17781                                                                                                                                                               │
+│ 24300000,"open":"0.0000020391259","close":"0.0000020070245","high":"0.00                                                                                                                                                               │
+│ 00020391259","low":"0.0000020070245","volume":"0.46617143","source":"","                                                                                                                                                               │
+│ amount":"232269.91914"},{"time":1778124600000,"open":"0.0000020070245","                                                                                                                                                               │
+│ close":"0.0000020062145","high":"0.0000020070245","low":"0.0000020062145                                                                                                                                                               │
+│ ","volume":"0.06471404","source":"","amount":"32256.789213"}]}                                                                                                                                                                         │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+✦ Based on the on-chain data, here is the audit of the rug pull for untroll coin (USTRL).
+
+  The Verdict: Manual Developer Exit (Soft Rug)
+  The rug pull was a classic "pump and dump" executed by the developer and a coordinated group of "bundler" wallets. After driving the price up by over 75x from launch, the developer and their associates dumped their entire supply
+  simultaneously, causing a 98% price crash in under 5 minutes.
+
+  ---
+
+  Audit Details
+
+  1. The "Dump" Moment
+   * Timestamp: May 6, 2026, around 11:15 AM (Unix 1778118900).
+   * Price Action: The token hit an All-Time High (ATH) of $0.000205. Within the next 5-minute candle, the price plummeted to $0.0000025, a near-total wipeout of value.
+   * Volume: Over $31,000 in sell volume was processed during the crash candle, which represented the majority of the remaining liquidity.
+
+  2. Developer & Insider Activity
+   * Dev Status: creator_close (Confirmed: The developer has sold every single token).
+   * Coordinated Bundlers: I identified 83 bundler wallets associated with this launch.
+   * Bundler Profits:
+       * TOP1 (Bundler): Made $369 profit (200% ROI) by sniping and dumping early.
+       * TOP3 (Bundler): Made $672 profit (146% ROI).
+       * TOP4 (Bundler): Made $617 profit (67% ROI).
+   * The developer wallet (ETowGq...Ggt3) personally realized $413 in profit after dumping their allocation within seconds of the price peak.
+
+  3. Security Red Flags
+   * Rug Ratio: 0.3+ (High Risk).
+   * Holder Concentration: While the top 10 currently only hold 7%, this is because the insiders have already exited. At the peak, the "bundler" wallets controlled the vast majority of the circulating supply.
+   * Mint/Freeze: Both were renounced (true), which lured investors into thinking it was "safe," but this did not prevent the developer from dumping their own held tokens.
+
+  Summary of the Scam
+   1. Launch & Bundle: The developer launched on Pump.fun and used 83 sub-wallets (bundlers) to buy up a huge chunk of the supply at a low price.
+   2. Pump: Retail investors saw the "safe" renounced status and the rising price, FOMOing in and driving the market cap to ~$205k.
+   3. The Rug: Once liquidity was sufficient, the developer and all bundler wallets dumped their tokens in a single coordinated window.
+   4. Abandonment: The original developer has since launched 12 other tokens, likely using the same strategy.
+
+  Current Status: The token is effectively dead, with only $3,746 in remaining liquidity and 71 bagholders remaining. Do not attempt to trade this token.

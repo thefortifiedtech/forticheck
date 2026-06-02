@@ -1,0 +1,95 @@
+tokens like 8C2RRRA3hfLggkkNNN1k4mu4VDa6HCeYK2gqhFGyFjt9 are an organic token that's a classic pump and dump setup.  analyse and outline steps to put in our bot to detect these tokens                                                    
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+
+  Analyzing Organic P&D Patterns: Analyzing organic pump and dump patterns for bot detection.
+
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell Perform a deep analysis of token 8C2RRR... to identify organic pump and dump signals.                                                                                                                                         │
+│                                                                                                                                                                                                                                        │
+│ ... first 459 lines hidden (Ctrl+O to show) ...                                                                                                                                                                                        │
+│ ,"usd_value":0.00287295597764424,"amount_percentage":3.875493e-9,"accu_amount":0,"accu_cost":0,"cost":0,"cost_cur":0,"sell_amount_cur":0,"sell_amount_percentage":0,"sell_volume_cur":0,"buy_volume_cur":0,"buy_amount_cur":0,"netflow │
+│ _usd":0,"netflow_amount":0,"buy_tx_count_cur":0,"sell_tx_count_cur":0,"current_buy_amount":0,"current_sell_amount":0,"current_transfer_in_amount":0,"current_transfer_out_amount":0,"history_bought_cost":0,"history_bought_fee":0,"hi │
+│ story_sold_income":0,"history_sold_fee":0,"history_transfer_in_amount":0,"history_transfer_in_cost":0,"history_transfer_out_amount":0,"history_transfer_out_income":0,"history_transfer_out_fee":0,"transfer_in_count":0,"transfer_out │
+│ _count":0,"wallet_tag_v2":"TOP1","profit":0,"total_cost":0,"profit_change":null,"realized_profit":0,"realized_pnl":null,"unrealized_profit":0,"unrealized_pnl":null,"avg_cost":null,"avg_sold":null,"transfer_in":true,"is_new":false, │
+│ "is_suspicious":false,"is_on_curve":true,"start_holding_at":1778125986,"end_holding_at":null,"last_block":418103930,"last_active_timestamp":1778125986,"native_transfer":{"name":null,"from_address":"DhFPu6pyMjnpqWEyct53d93vNp7puSLL │
+│ nv4sm9VXwkiS","amount":"0.025","timestamp":1777303058,"tx_hash":"4jUaJ1BHeEaM4P98AVrv3HiqJcCKHNsVXnPZrp5Z6wyboBB7Z2UHa4gf2GJenuvAcWehqGVB3HfHNQdiALi5rVrs"},"token_transfer":{"name":null,"address":"","timestamp":0,"tx_hash":"","typ │
+│ e":"transfer_in"},"token_transfer_in":{"name":null,"address":"","timestamp":0,"tx_hash":"","type":"transfer_in"},"token_transfer_out":{"name":null,"address":"","timestamp":0,"tx_hash":"","type":"holding"},"tags":["sandwich_bot","b │
+│ luechip_owner"],"maker_token_tags":["rat_trader","transfer_in"],"name":null,"avatar":null,"twitter_username":null,"twitter_name":null,"created_at":1737760923}]}                                                                       │
+│ {"list":[{"time":1778125500000,"open":"0.00037936595","close":"0.00074131368","high":"0.00074131368","low":"0.00037936595","volume":"1897.45515584","source":"","amount":"4299485.115092999"}]}                                        │
+│ Output too long and was saved to: /home/shawn/.gemini/tmp/shawn/tool-outputs/session-f0ec10ba-e6c4-4c75-9dc3-be7202c12119/run_shell_command_1778126356482_1.txt                                                                        │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell gmgn-cli market kline --chain sol --address 8C2RRRA3hfLggkkNNN1k4mu4VDa6HCeYK2gqhFGyFjt9 --resolution 1m --raw                                                                                                                │
+│                                                                                                                                                                                                                                        │
+│ {"list":[{"time":1778125740000,"open":"0.00037936595","close":"0.00039773781","high":"0.000400441","low":"0.00037936595","volume":"459.62709539","source":"","amount":"1178455.2430700003"},{"time":1778125800000,"open":"0.0003977378 │
+│ 1","close":"0.0004281555","high":"0.0004281555","low":"0.00039773781","volume":"473.22023331","source":"","amount":"1139707.442997"},{"time":1778125860000,"open":"0.0004281555","close":"0.00043143324","high":"0.00043813103","low": │
+│ "0.0004281555","volume":"256.87478978","source":"","amount":"596472.0232550001"},{"time":1778125920000,"open":"0.00043143324","close":"0.00047869854","high":"0.00047902646","low":"0.00043143324","volume":"344.748741","source":""," │
+│ amount":"784844.2375540001"},{"time":1778125980000,"open":"0.00047869854","close":"0.00053188679","high":"0.00053188679","low":"0.00047805445","volume":"71.63122944","source":"","amount":"141142.145266"},{"time":1778126040000,"ope │
+│ n":"0.00053188679","close":"0.0005841144","high":"0.0005841144","low":"0.00053071175","volume":"74.55122087","source":"","amount":"132355.462646"},{"time":1778126100000,"open":"0.0005841144","close":"0.00061289047","high":"0.00061 │
+│ 289047","low":"0.0005841144","volume":"43.36996124","source":"","amount":"72250.29611299999"},{"time":1778126160000,"open":"0.00061289047","close":"0.00067644297","high":"0.00067644297","low":"0.00061135154","volume":"73.23890418" │
+│ ,"source":"","amount":"113561.582696"},{"time":1778126220000,"open":"0.00067644297","close":"0.00071715873","high":"0.00071715873","low":"0.00067599246","volume":"50.33430062","source":"","amount":"72278.42886900001"},{"time":1778 │
+│ 126280000,"open":"0.00071715873","close":"0.00072956012","high":"0.00072956012","low":"0.00071516205","volume":"39.35498596","source":"","amount":"54229.20598600001"},{"time":1778126340000,"open":"0.00072956012","close":"0.0007419 │
+│ 7614","high":"0.00074197614","low":"0.00072956012","volume":"12.43593963","source":"","amount":"16794.27716"}]}                                                                                                                        │
+│                                                                                                                                                                                                                                        │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+✦ Analysis of the token Hormcrs (8C2RRR...) reveals that while it appears "organic," it is actually a highly efficient, small-scale liquidity-capture scam. The detection logic for these tokens is different from "hard rugs" because the
+  goal is to trap a small number of retail buyers rather than a massive crowd.
+
+  Here is the breakdown of the pattern and the steps to implement in your bot.
+
+  ---
+
+  1. The Pattern: "The Nano-Pump"
+   * Target: These bots target tokens with extremely low initial liquidity (e.g., ~$2k).
+   * The Trick: The developer launches the token and immediately transfers 99%+ of the supply to a "Vault" or secondary wallet (FhVo3m...HLuM).
+   * The Pump: A few "rat trader" or "fresh" wallets buy small amounts to create "green candles" on 1m charts. 
+   * The Exit: As soon as retail buys ($50–$100), the developer dumps from the secondary wallet. Because liquidity is so thin, even a $50 buy causes a massive price spike, and a $50 dump wipes it out.
+
+  ---
+
+  2. Bot Detection Steps (The "Organic" Audit)
+
+  To detect these tokens before they dump, your bot should execute these logic gates in order:
+
+  Step A: Supply Hijack Check (High Priority)
+   * Trigger: New token launch on Solana (Raydium/Meteora).
+   * Logic: Query top holders. If any single wallet (other than the LP/DEX address) holds >50% of the supply, flag it immediately.
+   * Refinement: Look for transfer_in tags. If a wallet received 90% of the supply via transfer instead of buying, it's a "dump wallet."
+   * In this token: TOP1 held 99.5% via transfer.
+
+  Step B: The "Rat" Cluster Test
+   * Logic: Check for multiple "Fresh Wallets" or "Rat Traders" buying within the first 60 seconds of launch. 
+   * Filter: If ≥3 wallets with the same funding source or "fresh" status buy simultaneously, it’s a coordinated pump.
+   * In this token: Multiple fresh wallets bought at the exact same $0.0004 price point.
+
+  Step C: Liquidity-to-Supply Skew
+   * Logic: Compare liquidity to market_cap. 
+   * Ratio: If Liquidity / Market Cap < 0.1 (i.e., Market Cap is 10x larger than Liquidity), the price is extremely fragile. 
+   * Signal: An organic token usually has deeper liquidity relative to its initial cap to allow for growth. A "pump and dump" keeps liquidity thin to maximize price impact for the scammer.
+
+  Step D: Dev Activity History
+   * Logic: Query dev.twitter_create_token_count and dev.creator_open_count.
+   * Red Flag: If the developer has launched multiple tokens (>3) in a short period (days) with creator_close status on all of them, it’s a serial pumper.
+
+  ---
+
+  3. Implementation Checklist for Your Bot
+
+  ┌──────────────────────┬──────────────────────────────────────────────────────────┬────────────┐
+  │ Rule Name            │ Logic Condition                                          │ Bot Action │
+  ├──────────────────────┼──────────────────────────────────────────────────────────┼────────────┤
+  │ Supply Concentration │ TOP1_Holder > 50% AND TOP1.is_transfer_in == true        │ BLOCK      │
+  │ Thin Liquidity Trap  │ Liquidity < $5,000 AND Price_Change_1m > 20%             │ WARNING    │
+  │ Rat Cluster          │ Count(Fresh_Wallets_Buying_1m) > 5                       │ BLOCK      │
+  │ Serial Launcher      │ Dev_Open_Count > 5 AND Dev_Token_Status == creator_close │ BLOCK      │
+  └──────────────────────┴──────────────────────────────────────────────────────────┴────────────┘
+  Example gmgn-cli command for your bot's backend:
+
+   1 # Get top holders and check for transfer-in supply hijack
+   2 gmgn-cli token holders --chain sol --address <TOKEN_ADDR> --limit 10 --raw
+   3
+   4 # Check for rat trader/insider activity
+   5 gmgn-cli token traders --chain sol --address <TOKEN_ADDR> --tag rat_trader --raw
+
+  Recommendation: Set your bot to auto-skip any token where the Top 10 holders (excluding DEX) own >15% of the supply. This is the single most effective way to avoid "organic" pump and dumps.

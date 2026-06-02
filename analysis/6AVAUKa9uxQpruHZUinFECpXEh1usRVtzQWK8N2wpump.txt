@@ -1,0 +1,79 @@
+> analyse 6AVAUKa9uxQpruHZUinFECpXEh1usRVtzQWK8N2wpump as it had a sucessful run up before it dumped.  Identify ways we can find tokens like these for the bot to signal                                                                     
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+
+  Analyzing Successful Run-up Pattern: Analyzing successful run-up and dump of 6AVAUK...pump to identify signal patterns.
+
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell Fetch token data, security metrics, profitable Smart Money holders, and price history for 6AVAUK...pump.                                                                                                                      │
+│                                                                                                                                                                                                                                        │
+│ ... first 572 lines hidden (Ctrl+O to show) ...                                                                                                                                                                                        │
+│ {"time":1778090400000,"open":"0.00054158266","close":"0.00054958779","high":"0.00056266704","low":"0.00052873906","volume":"5238.47428948","source":"","amount":"9553162.968746"},{"time":1778094000000,"open":"0.00054958779","close" │
+│ :"0.00050186151","high":"0.00055743151","low":"0.00049612231","volume":"13258.61935802","source":"","amount":"25396396.943538994"},{"time":1778097600000,"open":"0.00050186151","close":"0.00048750226","high":"0.00051549885","low":" │
+│ 0.00046556054","volume":"12216.60547204","source":"","amount":"25016507.356197998"},{"time":1778101200000,"open":"0.00048750226","close":"0.00053211325","high":"0.00054334048","low":"0.00046838269","volume":"12945.93052104","sourc │
+│ e":"","amount":"25591996.639401007"},{"time":1778104800000,"open":"0.00053211325","close":"0.00059163702","high":"0.00066105513","low":"0.00050959044","volume":"30259.2114071","source":"","amount":"51064506.76625296"},{"time":1778 │
+│ 108400000,"open":"0.00059163702","close":"0.00063488526","high":"0.0006705903","low":"0.00056400435","volume":"12334.68215527","source":"","amount":"20214217.360962"},{"time":1778112000000,"open":"0.00063488526","close":"0.0006253 │
+│ 3095","high":"0.0007171655","low":"0.00061245964","volume":"13456.11349429","source":"","amount":"20187437.221628003"},{"time":1778115600000,"open":"0.00062533095","close":"0.00059358086","high":"0.00062580992","low":"0.0005902109 │
+│ 2","volume":"2776.99213406","source":"","amount":"4603900.273128999"},{"time":1778119200000,"open":"0.00059358086","close":"0.00056497091","high":"0.00059361685","low":"0.00053986513","volume":"9120.50632647","source":"","amount": │
+│ "16157225.351316996"},{"time":1778122800000,"open":"0.00056497091","close":"0.00070643023","high":"0.00080967492","low":"0.00056497091","volume":"79999.26496268","source":"","amount":"116662825.88846685"},{"time":1778126400000,"op │
+│ en":"0.00070643023","close":"0.00068386788","high":"0.00070643023","low":"0.00067500365","volume":"1245.39840029","source":"","amount":"1818320.6830120003"}]}                                                                         │
+│ Output too long and was saved to: /home/shawn/.gemini/tmp/shawn/tool-outputs/session-f0ec10ba-e6c4-4c75-9dc3-be7202c12119/run_shell_command_1778126515044_1.txt                                                                        │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+✦ The analysis of Scam Altman (SCAM) (6AVAUK...pump) provides a perfect blueprint for identifying "successful" meme token runs versus quick rug pulls. This token reached a market cap of $20M (ATH) before its current decline, driven by
+  strong Smart Money interest and early "whaling."
+
+  1. Why it Succeeded (The "Bot Signals")
+
+  Unlike the previous examples, this token had massive early conviction from profitable traders.
+
+   * Smart Money Cluster: This token has 103 Smart Money wallets holding it. A "normal" pump and dump usually has 0–3. The moment Smart Money count hits >10, it is a high-conviction buy signal for a bot.
+   * Whale Presence: There are 11 Whale wallets involved.
+   * KOL Involvement: 35 Renowned (KOL) wallets are holding/trading. This indicates social amplification which sustains a run-up.
+   * High Holder Count: With 8,314 holders, the supply is much more distributed than a typical rug, making it harder for a single person to kill the chart instantly.
+   * CTO (Community Takeover): The cto_flag: 1 indicates the original dev left, and the community took over. On Solana, a successful CTO is often a bullish signal because the "rug risk" from the creator is removed.
+
+  ---
+
+  2. How to Find These Tokens (Bot Logic)
+
+  To signal "High Quality" runs like Scam Altman, your bot should use a Multi-Factor Trigger:
+
+  Signal 1: The "Smart Cluster" (The Entry)
+   * Condition: smart_degen_count >= 10 AND creation_timestamp < 1 hour.
+   * Logic: When 10+ historically profitable wallets buy the same token in a 60-minute window, it’s rarely a coincidence. This is your primary "Signal" to the user.
+
+  Signal 2: The "Migration Surge"
+   * Condition: launchpad_status == 2 (Migrated to DEX) AND volume_1h > $50,000.
+   * Logic: Tokens that survive the Pump.fun bonding curve and maintain high volume after migrating to Raydium/Meteora have "escaped the trenches."
+
+  Signal 3: The "KOL Wave"
+   * Condition: renowned_count >= 5 AND price_change_percent1h > 15%.
+   * Logic: KOLs are the "marketing" layer. If 5+ KOLs enter after Smart Money, a 2x-5x run is highly likely as they begin shiling to their followers.
+
+  ---
+
+  3. The "Exit" Logic (Bot Take-Profit Signals)
+
+  Even successful runs end. Your bot needs to signal the "Dump" before it happens:
+
+   * Indicator 1: Smart Money Net Flow. If smart_degen_count drops by >20% in 1 hour, the "smart" participants are exiting. Signal: Take Profit.
+   * Indicator 2: Dev/Insider Distribution. Check creator_token_status. If it moves from hold to sell on a token with high market cap, the "final dump" is starting.
+   * Indicator 3: Liquidity Thinning. If Price keeps rising but Liquidity is flat or decreasing, the top is near.
+
+  Actionable Bot Code/Command Pattern:
+  Your bot should periodically run this "Heat Check" command on trending tokens:
+
+   1 # Heat Check: Find tokens with high Smart Money and KOL interest
+   2 gmgn-cli market trending --chain sol --interval 1h --order-by smart_degen_count --limit 20
+
+  Summary Table for Bot Rules
+
+  ┌─────────────┬───────────────────────┬───────────────────────┬────────────────────────────────────┐
+  │ Feature     │ Scam Altman (Success) │ Organic Rug (Failure) │ Bot Action                         │
+  ├─────────────┼───────────────────────┼───────────────────────┼────────────────────────────────────┤
+  │ Smart Money │ 100+                  │ 0–2                   │ Signal "High Conviction" if >10    │
+  │ KOLs        │ 35                    │ 0                     │ Signal "Moonshot Potential" if >5  │
+  │ Holders     │ 8,000+                │ <100                  │ Signal "Safe Distribution" if >500 │
+  │ CTO Flag    │ 1 (Yes)               │ 0 (No)                │ Bullish for long-term holds        │
+  │ Rug Ratio   │ 0.05 (Low)            │ 0.3+ (High)           │ Filter out anything >0.25          │
+  └─────────────┴───────────────────────┴───────────────────────┴────────────────────────────────────┘
