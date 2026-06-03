@@ -270,7 +270,11 @@ def watchdog_cycle():
         
         # Calculate Market Cap
         try:
-            price = float(info.get("price", 0))
+            price_data = info.get("price", 0)
+            if isinstance(price_data, dict):
+                price = float(price_data.get("price", 0))
+            else:
+                price = float(price_data)
             total_supply = float(info.get("total_supply", 0))
             mcap = price * total_supply
         except (ValueError, TypeError):
