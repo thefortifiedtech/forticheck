@@ -35,9 +35,20 @@ db.exec(`
         initial_renowned INTEGER NOT NULL,
         last_alerted_smart_money INTEGER NOT NULL,
         last_alerted_renowned INTEGER NOT NULL,
-        golden_phoenix_alerted INTEGER DEFAULT 0
+        golden_phoenix_alerted INTEGER DEFAULT 0,
+        is_migrated INTEGER DEFAULT 0
     );
 `);
+
+// Run migration to add is_migrated if table already exists
+try {
+    db.exec(`ALTER TABLE cto_watchlist ADD COLUMN is_migrated INTEGER DEFAULT 0;`);
+    console.log("[Whitelabel DB] Added is_migrated column to cto_watchlist");
+} catch (e: any) {
+    if (!e.message.includes('duplicate column name') && !e.message.includes('already exists')) {
+        console.error("[Whitelabel DB] Error updating schema:", e);
+    }
+}
 
 export interface WhiteLabelConfig {
     guildId: string;
@@ -199,7 +210,7 @@ export function customizeEmbedForGuild(embed: any, guildId: string | null): any 
 
     if (config.customEmbedTitle && customized.title) {
         // Replace base title prefixes with custom title prefix
-        customized.title = customized.title.replace(/^(💎 PHOENIX:|🟢 \[FULL ALERT\]|🟡 \[PRE-ALERT\]|💎 BSC PHOENIX:|🟢 \[BSC FULL ALERT\]|🟡 \[BSC PRE-ALERT\])/, config.customEmbedTitle);
+        customized.title = customized.title.replace(/^(💎 PHOENIX:|🟢 \[FULL ALERT\]|🟡 \[PRE-ALERT\]|💎 BSC PHOENIX:|🟢 \[BSC FULL ALERT\]|🟡 \[BSC PRE-ALERT\]|💎 \[PRE-ALERT\]|💎 \[BSC PRE-ALERT\])/, config.customEmbedTitle);
     }
     if (config.customFooter) {
         customized.footer = { text: config.customFooter };
@@ -491,17 +502,27 @@ export function addTokenToWatchlist(
     symbol: string,
     chain: string,
     smartDegenCount: number,
-    renownedCount: number
+    renownedCount: number,
+    isMigrated: number = 0
 ): void {
     try {
         const now = Math.floor(Date.now() / 1000);
         db.prepare(`
             INSERT OR IGNORE INTO cto_watchlist (
                 token_address, chain, symbol, detected_at, initial_smart_money, initial_renowned,
-                last_alerted_smart_money, last_alerted_renowned, golden_phoenix_alerted
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-        `).run(tokenAddress, chain, symbol, now, smartDegenCount, renownedCount, smartDegenCount, renownedCount);
+                last_alerted_smart_money, last_alerted_renowned, golden_phoenix_alerted, is_migrated
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        `).run(tokenAddress, chain, symbol, now, smartDegenCount, renownedCount, smartDegenCount, renownedCount, isMigrated);
     } catch (error) {
         console.error(`[Whitelabel DB] Error adding token to watchlist ${tokenAddress}:`, error);
     }
 }
+
+export function isSignalMigrated(event: any): boolean {
+    if (event._stage === 'NEW_CREATION') return false;
+    if (event.exchange === 'pump' && (event.progress !== undefined && event.progress < 1)) return false;
+    if (event.migrated_pool_exchange || event.pool_type_str) return true;
+    if (event.launchpad === '' || event.launchpad === undefined) return true;
+    return true;
+}
+

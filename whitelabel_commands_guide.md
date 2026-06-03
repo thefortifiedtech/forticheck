@@ -19,14 +19,14 @@ The bot supports dual-chain alerting (Solana and BSC). Servers must register the
 ### 1. Register Solana Alerts
 Run this command in the channel where you want the **Solana** signals to be broadcast:
 ```discord
-!register <license_key>
+!ps-register <license_key>
 ```
 * **What it does**: Validates the license key via Whop. If valid, binds that channel to Solana alerts, saves the configuration, and unlocks customization commands.
 
 ### 2. Register BSC Alerts
 Run this command in the channel where you want the **BSC** signals to be broadcast:
 ```discord
-!registerbsc <license_key>
+!ps-registerbsc <license_key>
 ```
 * **What it does**: Binds that channel to BSC alerts and saves the configuration.
 
@@ -42,33 +42,33 @@ Once a server is registered, administrators can run the following commands in th
 
 | Command | Syntax | Description | Default Behavior |
 | :--- | :--- | :--- | :--- |
-| **Set Bot Name** | `!setname <bot_name>` | Updates the bot's nickname *only* within this Discord server. | Default bot username |
-| **Set Custom Title** | `!settitle <prefix>` | Replaces the alert embed title prefixes (e.g. `💎 PHOENIX:`) with your custom prefix. | Default prefixes |
-| **Set Custom Footer** | `!setfooter <text>` | Overrides the footer text at the bottom of the alert embeds. | `Phoenix Scanner Auto-Signal` |
-| **View Configuration** | `!status` | Returns a diagnostic embed detailing the active settings for the server. | N/A |
+| **Set Bot Name** | `!ps-setname <bot_name>` | Updates the bot's nickname *only* within this Discord server. | Default bot username |
+| **Set Custom Title** | `!ps-settitle <prefix>` | Replaces the alert embed title prefixes (e.g. `💎 PHOENIX:`) with your custom prefix. | Default prefixes |
+| **Set Custom Footer** | `!ps-setfooter <text>` | Overrides the footer text at the bottom of the alert embeds. | `Phoenix Scanner Auto-Signal` |
+| **View Configuration** | `!ps-status` | Returns a diagnostic embed detailing the active settings for the server. | N/A |
 
 ### Command Examples & Details
 
-#### `!setname <bot_name>`
+#### `!ps-setname <bot_name>`
 Sets the bot's nickname in the current server. 
-* **Example**: `!setname FortiAlerts`
+* **Example**: `!ps-setname FortiAlerts`
 * **Behind the Scenes**: Updates the database and immediately sets the server nickname. On bot restarts, nicknames are automatically re-synced.
 * *Note: The bot must have the "Change Nickname" permission in your server.*
 
-#### `!settitle <prefix>`
+#### `!ps-settitle <prefix>`
 Replaces default alert title prefixes with your custom brand name.
-* **Example**: `!settitle 🪐 MY BRAND`
+* **Example**: `!ps-settitle 🪐 MY BRAND`
 * **Effect**: Converts a title like `💎 PHOENIX: Community Takeover` into `🪐 MY BRAND Community Takeover`.
-* **Clearing**: Run `!settitle` (with no arguments) to revert to the default prefixes.
+* **Clearing**: Run `!ps-settitle` (with no arguments) to revert to the default prefixes.
 
-#### `!setfooter <text>`
+#### `!ps-setfooter <text>`
 Changes the footer text at the bottom of alert embeds.
-* **Example**: `!setfooter Powered by MyCommunity`
-* **Clearing**: Run `!setfooter` (with no arguments) to revert to the default footer.
+* **Example**: `!ps-setfooter Powered by MyCommunity`
+* **Clearing**: Run `!ps-setfooter` (with no arguments) to revert to the default footer.
 
-#### `!status`
+#### `!ps-status`
 Displays a summary of the current settings. 
-* **Example**: `!status`
+* **Example**: `!ps-status`
 * **Output**:
   ```yaml
   Status: 🟢 Active

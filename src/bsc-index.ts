@@ -1,7 +1,7 @@
 import { Client, GatewayIntentBits, Events, AttachmentBuilder, TextChannel } from 'discord.js';
 import * as dotenv from 'dotenv';
 import { GMGNAgent } from './gmgn-sdk';
-import { syncNicknamesOnStartup, handleWhiteLabelCommands, broadcastBscAlert, customizeEmbedForGuild, hasSeenToken, addSeenToken, pruneSeenTokens, addTokenToWatchlist } from './whitelabel';
+import { syncNicknamesOnStartup, handleWhiteLabelCommands, broadcastBscAlert, customizeEmbedForGuild, hasSeenToken, addSeenToken, pruneSeenTokens, addTokenToWatchlist, isSignalMigrated } from './whitelabel';
 
 dotenv.config();
 
@@ -268,14 +268,20 @@ client.once(Events.ClientReady, c => {
                 const socialAgeInHours = socialUpdateTimestamp > 0 ? (Math.floor(Date.now() / 1000) - socialUpdateTimestamp) / 3600 : 0;
                 if (socialAgeInHours > 120) continue;
                 
+                // Check if signal has migrated
+                const isMigratedInitial = isSignalMigrated(event);
+
                 // Add EVERY CTO to the Watchlist for 60-minute monitoring, even if smart money is 0
-                addTokenToWatchlist(tokenAddress, symbol, 'bsc', smartDegenCount, renownedCount);
+                addTokenToWatchlist(tokenAddress, symbol, 'bsc', smartDegenCount, renownedCount, isMigratedInitial ? 1 : 0);
                 
                 // Noise Filter: Must have >= 5 smart money OR >= 1 KOL, AND be alive (>$10k mcap)
                 if ((smartDegenCount >= 5 || renownedCount >= 1) && marketCap > 10000) {
+                    // Fetch tokenInfo to get the most accurate, live migration status
+                    const tokenInfo = await gmgn.getTokenInfo(tokenAddress);
+                    const isMigratedLive = tokenInfo.launchpad !== 'pump' && tokenInfo.launchpad !== 'Pump.fun' || tokenInfo.launchpad_progress >= 1;
 
                     let color = 0x3498DB; // BLUE
-                    let title = "💎 BSC PHOENIX: Community Takeover";
+                    let title = isMigratedLive ? "💎 BSC PHOENIX: Community Takeover" : "💎 [BSC PRE-ALERT] PHOENIX: Community Takeover";
                     let description = `Dev exited, community taking the lead.\n\`${tokenAddress}\``;
 
                     const embed = {

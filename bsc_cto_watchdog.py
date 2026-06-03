@@ -134,9 +134,14 @@ def load_watchlist(chain='bsc'):
                 initial_renowned INTEGER NOT NULL,
                 last_alerted_smart_money INTEGER NOT NULL,
                 last_alerted_renowned INTEGER NOT NULL,
-                golden_phoenix_alerted INTEGER DEFAULT 0
+                golden_phoenix_alerted INTEGER DEFAULT 0,
+                is_migrated INTEGER DEFAULT 0
             )
         """)
+        try:
+            cursor.execute("ALTER TABLE cto_watchlist ADD COLUMN is_migrated INTEGER DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
         cursor.execute("SELECT * FROM cto_watchlist WHERE chain = ?", (chain,))
         rows = cursor.fetchall()
         data = {}
@@ -148,7 +153,8 @@ def load_watchlist(chain='bsc'):
                 "initial_renowned": row["initial_renowned"],
                 "last_alerted_smart_money": row["last_alerted_smart_money"],
                 "last_alerted_renowned": row["last_alerted_renowned"],
-                "golden_phoenix_alerted": bool(row["golden_phoenix_alerted"])
+                "golden_phoenix_alerted": bool(row["golden_phoenix_alerted"]),
+                "is_migrated": bool(row["is_migrated"])
             }
         conn.close()
         return data
@@ -171,12 +177,14 @@ def save_watchlist(active_tokens, chain='bsc'):
                 UPDATE cto_watchlist SET
                     last_alerted_smart_money = ?,
                     last_alerted_renowned = ?,
-                    golden_phoenix_alerted = ?
+                    golden_phoenix_alerted = ?,
+                    is_migrated = ?
                 WHERE token_address = ? AND chain = ?
             """, (
                 data["last_alerted_smart_money"],
                 data["last_alerted_renowned"],
                 1 if data["golden_phoenix_alerted"] else 0,
+                1 if data.get("is_migrated", False) else 0,
                 mint,
                 chain
             ))
@@ -237,6 +245,37 @@ def watchdog_cycle():
         initial_kols = data.get("initial_renowned", 0)
         
         updated = False
+
+        # 0. Migration Check & Trigger
+        if not data.get("is_migrated", False):
+            launchpad = info.get("launchpad", "")
+            launchpad_lower = str(launchpad).lower()
+            
+            is_now_migrated = True
+            if "pump" in launchpad_lower:
+                progress = info.get("launchpad_progress", 0)
+                if progress < 1:
+                    is_now_migrated = False
+            
+            pool_info = info.get("pool", {})
+            if pool_info:
+                exchange_lower = str(pool_info.get("exchange", "")).lower()
+                if "pump" in exchange_lower and not is_now_migrated:
+                    is_now_migrated = False
+                    
+            if is_now_migrated:
+                embed = {
+                    "title": "🟢 PHOENIX MIGRATED & LIQUIDITY BONDED",
+                    "description": f"🚀 **{data.get('symbol')}** has completed bonding and successfully migrated!\n`{mint}`",
+                    "color": 0x2ECC71,
+                    "fields": [
+                        {"name": "Market Cap", "value": mcap_str, "inline": True},
+                        {"name": "Chart", "value": f"[View on GMGN](https://gmgn.ai/bsc/token/{mint})", "inline": False}
+                    ]
+                }
+                send_discord_message(f"BSC Phoenix Migrated: {data.get('symbol')}", embed, 'bsc')
+                data["is_migrated"] = True
+                updated = True
 
         # 1. Smart Money Trigger (Alert if >= initial + 2, and higher than last alert)
         if current_smart >= initial_smart + 2 and current_smart > data.get("last_alerted_smart_money", 0):

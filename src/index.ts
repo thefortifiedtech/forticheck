@@ -7,7 +7,7 @@ import { auditMeteoraExplosive } from './liquidity';
 import { analyzeCluster, ClusterReport } from './scanner';
 import { BotConfig } from './config';
 import { attemptSnipe } from './sniper';
-import { syncNicknamesOnStartup, handleWhiteLabelCommands, broadcastSolanaAlert, customizeEmbedForGuild, hasSeenToken, addSeenToken, pruneSeenTokens, addTokenToWatchlist } from './whitelabel';
+import { syncNicknamesOnStartup, handleWhiteLabelCommands, broadcastSolanaAlert, customizeEmbedForGuild, hasSeenToken, addSeenToken, pruneSeenTokens, addTokenToWatchlist, isSignalMigrated } from './whitelabel';
 
 dotenv.config();
 
@@ -308,16 +308,23 @@ client.once(Events.ClientReady, c => {
                 const socialAgeInHours = socialUpdateTimestamp > 0 ? (Math.floor(Date.now() / 1000) - socialUpdateTimestamp) / 3600 : 0;
                 if (socialAgeInHours > 24) continue;
                 
+                // Check if signal has migrated
+                const isMigratedInitial = isSignalMigrated(event);
+
                 // Add EVERY CTO to the Watchlist for 60-minute monitoring, even if smart money is 0
-                addTokenToWatchlist(tokenAddress, symbol, 'sol', smartDegenCount, renownedCount);
+                addTokenToWatchlist(tokenAddress, symbol, 'sol', smartDegenCount, renownedCount, isMigratedInitial ? 1 : 0);
                 
                 // Noise Filter: Must have >= 5 smart money OR >= 1 KOL, AND be alive (>$10k mcap)
                 if ((smartDegenCount >= 5 || renownedCount >= 1) && marketCap > 10000) {
                     // Check Meteora DLMM for Explosive pools
                     const metData = await auditMeteoraExplosive(tokenAddress);
 
+                    // Fetch tokenInfo to get the most accurate, live migration status
+                    const tokenInfo = await gmgn.getTokenInfo(tokenAddress);
+                    const isMigratedLive = tokenInfo.launchpad !== 'pump' || tokenInfo.launchpad_progress >= 1;
+
                     let color = 0x3498DB; // BLUE
-                    let title = "💎 PHOENIX: Community Takeover";
+                    let title = isMigratedLive ? "💎 PHOENIX: Community Takeover" : "💎 [PRE-ALERT] PHOENIX: Community Takeover";
                     let description = `Dev exited, community taking the lead.\n\`${tokenAddress}\``;
 
                     if (metData && metData.status === "🚨 EXPLOSIVE") {
