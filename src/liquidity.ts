@@ -25,11 +25,11 @@ const SYSTEM_PROGRAM = '11111111111111111111111111111111';
  */
 export async function getTopPairAddress(tokenAddress: string): Promise<string | null> {
     try {
-        const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`);
-        const data = await res.json();
-        if (data && data.pairs && data.pairs.length > 0) {
+        const res = await fetch(`https://api.dexscreener.com/token-pairs/v1/solana/${tokenAddress}`);
+        const pairs = await res.json();
+        if (pairs && pairs.length > 0) {
             // Get the pair with highest liquidity on Solana
-            const solanaPairs = data.pairs.filter((p: any) => p.chainId === 'solana');
+            const solanaPairs = pairs.filter((p: any) => p.chainId === 'solana');
             if (solanaPairs.length === 0) return null;
             
             const sortedPairs = solanaPairs.sort((a: any, b: any) => {
@@ -176,10 +176,9 @@ export interface ExplosiveMeteoraData {
 export async function auditMeteoraExplosive(mintAddress: string): Promise<ExplosiveMeteoraData | null> {
     try {
         // Step 1: Find DLMM pool address via DexScreener
-        const dexRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mintAddress}`);
+        const dexRes = await fetch(`https://api.dexscreener.com/token-pairs/v1/solana/${mintAddress}`);
         if (!dexRes.ok) return null;
-        const dexData = await dexRes.json();
-        const pairs = dexData.pairs || [];
+        const pairs = await dexRes.json() || [];
         
         let poolId = null;
         for (const pair of pairs) {

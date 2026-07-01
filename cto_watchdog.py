@@ -206,13 +206,12 @@ def get_token_info(mint):
 def check_meteora(mint):
     try:
         # Step 1: DexScreener
-        dex_res = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{mint}", timeout=10)
+        dex_res = requests.get(f"https://api.dexscreener.com/token-pairs/v1/solana/{mint}", timeout=10)
         if dex_res.status_code != 200:
             return None
             
-        dex_data = dex_res.json() or {}
+        pairs = dex_res.json() or []
         pool_id = None
-        pairs = dex_data.get("pairs") or []
         for pair in pairs:
             if pair.get("dexId") == "meteora" and "DLMM" in pair.get("labels", []):
                 pool_id = pair.get("pairAddress")
