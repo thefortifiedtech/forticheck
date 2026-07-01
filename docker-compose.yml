@@ -51,6 +51,19 @@ services:
       - ./db:/app/db
     command: python3 bsc_cto_watchdog.py
 
+  dlmm-alpha:
+    build: .
+    container_name: forticheck-dlmm-alpha
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/db/whitelabel.db
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./db:/app/db
+    command: python3 dlmm_alpha.py
+
 volumes:
   db:
 
