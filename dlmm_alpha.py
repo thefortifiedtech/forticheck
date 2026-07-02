@@ -19,13 +19,25 @@ def load_env():
     return env_dict
 
 env_vars = load_env()
-DISCORD_TOKEN = env_vars.get("DISCORD_TOKEN")
-DLMM_CHANNEL_ID = env_vars.get("DLMM_CHANNEL_ID")
+
+def get_env(key, default=None):
+    val = os.getenv(key)
+    if val is not None:
+        return val
+    return env_vars.get(key, default)
+
+DISCORD_TOKEN = get_env("DISCORD_TOKEN")
+DLMM_CHANNEL_ID = get_env("DLMM_CHANNEL_ID")
 API_BASE = "https://dlmm.datapi.meteora.ag/pools"
-DB_FILE = env_vars.get("DB_PATH", "whitelabel.db")
+DB_FILE = get_env("DB_PATH", "whitelabel.db")
 
 def init_db():
     try:
+        # Ensure the directory exists
+        db_dir = os.path.dirname(DB_FILE)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+            
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         cursor.execute("""
@@ -191,7 +203,7 @@ def audit_meteora_pool(mint):
                 fee_tvl_ratio = (fees_24h / liquidity) * 100 if liquidity > 0 else 0.0
                 
                 # The filter logic: high bin step (>= 100) and high volume
-                min_volume = float(env_vars.get("DLMM_MIN_VOLUME", 1000))
+                min_volume = float(get_env("DLMM_MIN_VOLUME", 1000))
                 if int(bin_step) >= 100 and volume_24h >= min_volume:
                     matched_pools.append({
                         "pool_address": pool_id,
