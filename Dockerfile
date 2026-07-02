@@ -14,7 +14,7 @@ WORKDIR /app
 
 # Install Node.js package dependencies
 COPY package*.json tsconfig.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Install Python dependencies (requests)
 RUN pip3 install --no-cache-dir requests --break-system-packages
