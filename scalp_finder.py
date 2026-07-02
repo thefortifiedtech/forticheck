@@ -29,6 +29,7 @@ def get_env(key, default=None):
 DISCORD_TOKEN = get_env("DISCORD_TOKEN")
 VELOCITY_SCALPS_CHANNEL_ID = get_env("VELOCITY_SCALPS_CHANNEL_ID", get_env("VELOCITY_CHANNEL_ID"))
 DB_FILE = get_env("DB_PATH", "db/whitelabel.db")
+VELOCITY_ALERT_COOLDOWN = int(get_env("VELOCITY_ALERT_COOLDOWN", 3600))
 
 def init_db():
     try:
@@ -50,10 +51,16 @@ def init_db():
         print(f"Error initializing DB: {e}")
 
 def has_seen_token(address):
+    if VELOCITY_ALERT_COOLDOWN <= 0:
+        return False
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        cursor.execute("SELECT 1 FROM velocity_seen_tokens WHERE address = ?", (address,))
+        cutoff = int(time.time()) - VELOCITY_ALERT_COOLDOWN
+        cursor.execute(
+            "SELECT 1 FROM velocity_seen_tokens WHERE address = ? AND detected_at > ?",
+            (address, cutoff)
+        )
         row = cursor.fetchone()
         conn.close()
         return row is not None
@@ -66,7 +73,7 @@ def add_seen_token(address):
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT OR IGNORE INTO velocity_seen_tokens (address, detected_at) VALUES (?, ?)",
+            "INSERT OR REPLACE INTO velocity_seen_tokens (address, detected_at) VALUES (?, ?)",
             (address, int(time.time()))
         )
         conn.commit()

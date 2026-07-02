@@ -30,7 +30,6 @@ DISCORD_TOKEN = get_env("DISCORD_TOKEN")
 DLMM_CHANNEL_ID = get_env("DLMM_CHANNEL_ID")
 API_BASE = "https://dlmm.datapi.meteora.ag/pools"
 DB_FILE = get_env("DB_PATH", "whitelabel.db")
-DLMM_ALERT_COOLDOWN = int(get_env("DLMM_ALERT_COOLDOWN", 3600))
 
 def init_db():
     try:
@@ -63,24 +62,6 @@ def has_seen_pool(pool_address):
         return row is not None
     except Exception as e:
         print(f"Error checking pool in DB: {e}")
-        return False
-
-def has_seen_token_recently(token_address):
-    if DLMM_ALERT_COOLDOWN <= 0:
-        return False
-    try:
-        conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cutoff = int(time.time()) - DLMM_ALERT_COOLDOWN
-        cursor.execute(
-            "SELECT 1 FROM dlmm_seen_pools WHERE token_address = ? AND detected_at > ?",
-            (token_address, cutoff)
-        )
-        row = cursor.fetchone()
-        conn.close()
-        return row is not None
-    except Exception as e:
-        print(f"Error checking token cooldown in DB: {e}")
         return False
 
 def add_seen_pool(pool_address, token_address):
@@ -284,10 +265,6 @@ def scan_cycle():
         is_wash_trading = token.get("is_wash_trading", False)
         
         if rug_ratio >= 0.3 or is_wash_trading:
-            continue
-            
-        # 1.5 Enforce token alert cooldown
-        if has_seen_token_recently(mint):
             continue
             
         # 2. Check Meteora
