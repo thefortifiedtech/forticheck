@@ -64,6 +64,19 @@ services:
       - ./db:/app/db
     command: python3 dlmm_alpha.py
 
+  velocity-scalp:
+    build: .
+    container_name: forticheck-velocity-scalp
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/db/whitelabel.db
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./db:/app/db
+    command: python3 scalp_finder.py
+
 volumes:
   db:
 
