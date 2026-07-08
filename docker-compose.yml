@@ -77,6 +77,19 @@ services:
       - ./db:/app/db
     command: python3 scalp_finder.py
 
+  god-candle-watchdog:
+    build: .
+    container_name: forticheck-god-candle-watchdog
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/db/whitelabel.db
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./db:/app/db
+    command: python3 god_candle_watchdog.py
+
 volumes:
   db:
 
