@@ -36,6 +36,8 @@ GOD_CANDLE_MAX_MC = float(get_env("GOD_CANDLE_MAX_MC", 10000000))
 GOD_CANDLE_MIN_SWAPS = int(get_env("GOD_CANDLE_MIN_SWAPS", 75))
 GOD_CANDLE_MIN_HOT_LEVEL = int(get_env("GOD_CANDLE_MIN_HOT_LEVEL", 2))
 GOD_CANDLE_COOLDOWN = int(get_env("GOD_CANDLE_COOLDOWN", 3600))
+GOD_CANDLE_SELL_BUY_RATIO = float(get_env("GOD_CANDLE_SELL_BUY_RATIO", 1.5))
+GOD_CANDLE_MIN_PRICE_CHANGE_1M = float(get_env("GOD_CANDLE_MIN_PRICE_CHANGE_1M", 0.0))
 
 def init_db():
     try:
@@ -157,8 +159,8 @@ def check_for_imminent_god_candle(token_data):
             # 2. Extreme micro-volume activity
             if swaps_1m > GOD_CANDLE_MIN_SWAPS:
                 
-                # 3. The Absorption Check (High selling pressure but price refuses to drop)
-                if sells_1m > buys_1m * 1.5 and change_1m >= 0:
+                # 3. The Absorption Check (High selling pressure but price refuses to drop below threshold)
+                if sells_1m > buys_1m * GOD_CANDLE_SELL_BUY_RATIO and change_1m >= GOD_CANDLE_MIN_PRICE_CHANGE_1M:
                     
                     # 4. Safety verification
                     if not is_wash_trading and rug_ratio < 0.15:
