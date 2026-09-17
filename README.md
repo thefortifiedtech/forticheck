@@ -9,4 +9,4 @@ Forticheck is a Solana and BSC network token scanner that uses the GMGN API to f
 
 The code is designed to run inside of a docker container on AWS.  The output signals are sent to a Discord channel.  The discord channel messages can be white labeled to allow multiple groups to use the same bot for signals.
 
-This code was originally part of an influencer project.  This code is provided as an open source project for educational and informational purposes only.  The original authors make no representations or guarentees that this code will provide any finanical gain.  Please use it at your own risk.
+This code was originally part of an influencer project and released with permission.  This code is provided as an open source project for educational and informational purposes only.  The original authors make no representations or guarentees that this code will provide any finanical gain.  Please use it at your own risk.
