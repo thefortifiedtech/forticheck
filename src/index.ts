@@ -76,18 +76,25 @@ webServer.get('/api/whitelabel', (req, res) => {
 // API watchlist endpoint
 webServer.get('/api/watchlist', (req, res) => {
     try {
-        const { db } = require('./whitelabel');
+        const { db, getTokenInfoCache } = require('./whitelabel');
         const rows = db.prepare(`
             SELECT token_address, chain, symbol, detected_at, initial_smart_money, initial_renowned, golden_phoenix_alerted, is_migrated 
             FROM cto_watchlist ORDER BY detected_at DESC LIMIT 200
         `).all();
+        
+        // Helper to check live migration status from token info cache
+        const isMigratedLive = (chain: string, address: string): boolean => {
+            const info = getTokenInfoCache(chain, address, 300);
+            if (!info) return false;
+            return info.launchpad !== 'pump' || (info.launchpad_progress || 0) >= 1;
+        };
         
         // Enrich with computed alert reasons
         const enriched = rows.map((token: any) => {
             const reasons: string[] = [];
             const smartMoney = token.initial_smart_money || 0;
             const kol = token.initial_renowned || 0;
-            const isMigrated = token.is_migrated === 1;
+            const liveMigrated = isMigratedLive(token.chain, token.token_address);
             const golden = token.golden_phoenix_alerted === 1;
             
             if (golden) {
@@ -105,7 +112,7 @@ webServer.get('/api/watchlist', (req, res) => {
             } else if (kol >= 1) {
                 reasons.push(`KOL Interest: ${kol} renowned wallet(s)`);
             }
-            if (isMigrated) {
+            if (liveMigrated) {
                 reasons.push('Migrated to DEX - Community takeover complete');
             } else {
                 reasons.push('Bonding curve phase - Pre-migration');
@@ -114,7 +121,7 @@ webServer.get('/api/watchlist', (req, res) => {
                 reasons.push('CTO flag - Dev exited, community taking over');
             }
             
-            return { ...token, alert_reason: reasons };
+            return { ...token, is_migrated: liveMigrated, alert_reason: reasons };
         });
         
         res.json(enriched);
@@ -127,7 +134,7 @@ webServer.get('/api/watchlist', (req, res) => {
 // GET /api/watchlist/:tokenAddress - Get specific watchlist token with full details
 webServer.get('/api/watchlist/:tokenAddress', (req, res) => {
     try {
-        const { db } = require('./whitelabel');
+        const { db, getTokenInfoCache } = require('./whitelabel');
         const tokenAddress = req.params.tokenAddress;
         const row = db.prepare(`
             SELECT token_address, chain, symbol, detected_at, initial_smart_money, initial_renowned, 
@@ -139,11 +146,18 @@ webServer.get('/api/watchlist/:tokenAddress', (req, res) => {
             return res.status(404).json({ error: 'Token not found in watchlist' });
         }
         
+        // Helper to check live migration status from token info cache
+        const isMigratedLive = (chain: string, address: string): boolean => {
+            const info = getTokenInfoCache(chain, address, 300);
+            if (!info) return false;
+            return info.launchpad !== 'pump' || (info.launchpad_progress || 0) >= 1;
+        };
+        
         // Compute alert reason
         const reasons: string[] = [];
         const smartMoney = row.initial_smart_money || 0;
         const kol = row.initial_renowned || 0;
-        const isMigrated = row.is_migrated === 1;
+        const liveMigrated = isMigratedLive(row.chain, row.token_address);
         const golden = row.golden_phoenix_alerted === 1;
         
         if (golden) {
@@ -161,7 +175,7 @@ webServer.get('/api/watchlist/:tokenAddress', (req, res) => {
         } else if (kol >= 1) {
             reasons.push(`KOL Interest: ${kol} renowned wallet(s) detected`);
         }
-        if (isMigrated) {
+        if (liveMigrated) {
             reasons.push('Token migrated to DEX - Community takeover complete');
         } else {
             reasons.push('Bonding curve phase - Pre-migration opportunity');
@@ -170,7 +184,7 @@ webServer.get('/api/watchlist/:tokenAddress', (req, res) => {
             reasons.push('CTO flag detected - Dev exited, community taking over');
         }
         
-        res.json({ ...row, alert_reason: reasons });
+        res.json({ ...row, is_migrated: liveMigrated, alert_reason: reasons });
     } catch (error) {
         console.error('[Web Server] Error fetching watchlist token:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -215,6 +229,13 @@ webServer.get('/api/alerts', (req, res) => {
             return info?.cto_flag === 1 || info?.cto_flag === true;
         };
         
+        // Helper to check live migration status from token info cache
+        const isMigratedLive = (chain: string, address: string): boolean => {
+            const info = getTokenInfoCache(chain, address, 300);
+            if (!info) return false;
+            return info.launchpad !== 'pump' || (info.launchpad_progress || 0) >= 1;
+        };
+        
         // 1. CTO Watchlist alerts (Phoenix scanner) - only include tokens matching Discord noise filter
         const ctoRows = db.prepare(`
             SELECT token_address, chain, symbol, detected_at, initial_smart_money, initial_renowned, 
@@ -233,7 +254,9 @@ webServer.get('/api/alerts', (req, res) => {
             else if ((t.initial_smart_money || 0) > 0) reasons.push(`Minor Smart Money: ${t.initial_smart_money} wallets`);
             if ((t.initial_renowned || 0) >= 5) reasons.push(`KOL Endorsement: ${t.initial_renowned} renowned wallets`);
             else if ((t.initial_renowned || 0) >= 1) reasons.push(`KOL Interest: ${t.initial_renowned} wallets`);
-            if (t.is_migrated === 1) reasons.push('Migrated to DEX - Community takeover');
+            
+            const liveMigrated = isMigratedLive(t.chain, t.token_address);
+            if (liveMigrated) reasons.push('Migrated to DEX - Community takeover');
             else reasons.push('Bonding curve phase - Pre-migration');
             if (reasons.length === 0) reasons.push('CTO flag - Dev exited');
             
@@ -247,12 +270,12 @@ webServer.get('/api/alerts', (req, res) => {
                 detected_at: t.detected_at,
                 smart_money: t.initial_smart_money || 0,
                 kol_count: t.initial_renowned || 0,
-                is_migrated: t.is_migrated === 1,
+                is_migrated: liveMigrated,
                 golden_phoenix: t.golden_phoenix_alerted === 1,
                 cto_flag: hasCtoFlag(t.chain, t.token_address),
                 reason: reasons[0],
                 all_reasons: reasons,
-                color: t.golden_phoenix_alerted === 1 ? 0xFFD700 : (t.is_migrated === 1 ? 0x3498DB : 0xF39C12)
+                color: t.golden_phoenix_alerted === 1 ? 0xFFD700 : (liveMigrated ? 0x3498DB : 0xF39C12)
             });
         });
         
