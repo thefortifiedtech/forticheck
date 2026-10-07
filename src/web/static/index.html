@@ -336,6 +336,24 @@
             font-weight: bold;
         }
         
+        .type-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .type-phoenix { background: rgba(52, 152, 219, 0.2); color: #3498db; }
+        .type-dlmm { background: rgba(255, 215, 0, 0.2); color: #ffd700; }
+        .type-god { background: rgba(255, 59, 48, 0.2); color: #ff3b30; }
+        .type-velocity { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .type-resurrection { background: rgba(155, 89, 182, 0.2); color: #9b59b6; }
+        .type-smart-money { background: rgba(155, 89, 182, 0.2); color: #9b59b6; }
+        .type-kol { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+        
         .badge-smart {
             background: rgba(0, 212, 255, 0.2);
             color: #00d4ff;
@@ -444,11 +462,13 @@
             <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                 <select id="type-filter" onchange="filterAlerts()">
                     <option value="all">All Types</option>
-                    <option value="CTO_PHOENIX"> phoenix</option>
+                    <option value="CTO_PHOENIX">Phoenix CTO</option>
                     <option value="DLMM_ALPHA">DLMM Alpha</option>
                     <option value="GOD_CANDLE">God Candle</option>
                     <option value="VELOCITY_SCALP">Velocity Scalp</option>
                     <option value="RESURRECTION">Resurrection</option>
+                    <option value="SMART_MONEY_ACCUMULATION">Smart Money Accum.</option>
+                    <option value="KOL_ACCUMULATION">KOL Accumulation</option>
                 </select>
                 <select id="chain-filter" onchange="filterAlerts()">
                     <option value="all">All Chains</option>
@@ -566,25 +586,47 @@ async function fetchStats() {
                                   alert.source === 'DLMM Alpha Scanner' ? 'DLMM Alpha' : 
                                   alert.source === 'God Candle Watchdog' ? 'God Candle' : 
                                   alert.source === 'Velocity Scalp Finder' ? 'Velocity Scalp' : 
-                                  alert.source === 'Resurrection Scanner' ? 'Resurrection' : 'Unknown';
+                                  alert.source === 'Resurrection Scanner' ? 'Resurrection' : 
+                                  alert.source === 'CTO Watchdog' ? 'CTO Watchdog' : 'Unknown';
                                   
                     const tokenDisplay = alert.token_address.length > 16 ? 
                                        alert.token_address.substring(0, 16) + '...' : 
                                        alert.token_address;
-                     
+                    
                     const reasons = alert.all_reasons || [alert.reason];
-                     
+                    
+                    // Type-specific display name and CSS class
+                    let typeDisplay, typeClass;
+                    switch(alert.type) {
+                        case 'CTO_PHOENIX':
+                            typeDisplay = 'Phoenix CTO'; typeClass = 'type-phoenix'; break;
+                        case 'DLMM_ALPHA':
+                            typeDisplay = 'DLMM Alpha'; typeClass = 'type-dlmm'; break;
+                        case 'GOD_CANDLE':
+                            typeDisplay = 'God Candle'; typeClass = 'type-god'; break;
+                        case 'VELOCITY_SCALP':
+                            typeDisplay = 'Velocity Scalp'; typeClass = 'type-velocity'; break;
+                        case 'RESURRECTION':
+                            typeDisplay = 'Resurrection'; typeClass = 'type-resurrection'; break;
+                        case 'SMART_MONEY_ACCUMULATION':
+                            typeDisplay = 'Smart Money Accum.'; typeClass = 'type-smart-money'; break;
+                        case 'KOL_ACCUMULATION':
+                            typeDisplay = 'KOL Accumulation'; typeClass = 'type-kol'; break;
+                        default:
+                            typeDisplay = alert.type; typeClass = '';
+                    }
+
                     return `
                     <tr class="clickable-row" onclick="showTokenDetail(${index})">
-                        <td>${alert.type}</td>
+                        <td><span class="type-badge ${typeClass}">${typeDisplay}</span></td>
                         <td>${source}</td>
                         <td><span class="token-address">${tokenDisplay}</span></td>
                         <td>${alert.symbol || '-'}</td>
                         <td class="alert-reason">
                             ${reasons.map(function(reason) {
                                 const badgeClass = reason.includes('Golden Phoenix') ? 'badge-golden' : 
-                                                 reason.includes('Smart Money') ? 'badge-smart' : 
-                                                 reason.includes('KOL') ? 'badge-kol' : 
+                                                 reason.includes('Smart Money Accumulation') || reason.includes('Smart Money:') ? 'badge-smart' : 
+                                                 reason.includes('KOL Accumulation') || reason.includes('KOL Interest') || reason.includes('KOL Endorsement') ? 'badge-kol' : 
                                                  reason.includes('Migrated') ? 'badge-migrated' : 
                                                  reason.includes('Pre-migration') ? 'badge-pending' : 
                                                  reason.includes('Resurrection') ? 'badge-golden' : 
@@ -685,7 +727,14 @@ async function fetchStats() {
             const poolAddress = alert.pool_address;
             const poolLinks = alert.pool_links;
             
-            modalTitle.textContent = `${symbol} - Alert Details`;
+            // Accumulation-specific fields
+            const smartDelta = alert.smart_delta;
+            const kolDelta = alert.kol_delta;
+            const initialSmart = alert.initial_smart_money;
+            const initialKol = alert.initial_kol_count;
+            const isAccumulation = alert.type === 'SMART_MONEY_ACCUMULATION' || alert.type === 'KOL_ACCUMULATION';
+            
+            modalTitle.textContent = `${symbol} - ${isAccumulation ? 'Accumulation Update' : 'Alert Details'}`;
             
             const gmgnUrl = `https://gmgn.ai/${chain === 'sol' ? 'sol' : 'bsc'}/token/${tokenAddress}`;
             const dexUrl = `https://dexscreener.com/${chain === 'sol' ? 'solana' : 'bsc'}/${tokenAddress}`;
@@ -697,6 +746,40 @@ async function fetchStats() {
                 extraLinks = `
                     <a class="link-btn link-dex" href="${poolLinks.meteora}" target="_blank">🌊 Meteora Pool</a>
                     <a class="link-btn link-dex" href="${poolLinks.hawkfi}" target="_blank">⚡ HawkFi</a>
+                `;
+            }
+            
+            // Build accumulation detail rows
+            let accumulationRows = '';
+            if (alert.type === 'SMART_MONEY_ACCUMULATION') {
+                accumulationRows = `
+                    <div class="detail-item">
+                        <div class="label">Initial Smart Money</div>
+                        <div class="value"><span class="signal-badge badge-smart">${initialSmart} wallets</span></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Current Smart Money</div>
+                        <div class="value"><span class="signal-badge badge-smart">${smartMoney} wallets</span></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">New Smart Wallets</div>
+                        <div class="value"><span class="signal-badge badge-golden">+${smartDelta} wallets</span></div>
+                    </div>
+                `;
+            } else if (alert.type === 'KOL_ACCUMULATION') {
+                accumulationRows = `
+                    <div class="detail-item">
+                        <div class="label">Initial KOLs</div>
+                        <div class="value"><span class="signal-badge badge-kol">${initialKol} wallets</span></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Current KOLs</div>
+                        <div class="value"><span class="signal-badge badge-kol">${kol} wallets</span></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">New KOLs</div>
+                        <div class="value"><span class="signal-badge badge-golden">+${kolDelta} wallets</span></div>
+                    </div>
                 `;
             }
             
@@ -724,6 +807,7 @@ async function fetchStats() {
                         <div class="label">Detected</div>
                         <div class="value">${formatTimestamp(detectedAt)}</div>
                     </div>
+                    ${isAccumulation ? accumulationRows : `
                     <div class="detail-item">
                         <div class="label">Smart Money</div>
                         <div class="value"><span class="signal-badge badge-smart">${smartMoney} wallets</span></div>
@@ -744,6 +828,7 @@ async function fetchStats() {
                         <div class="label">CTO Flag</div>
                         <div class="value"><span class="signal-badge ${ctoFlag ? 'badge-golden' : 'badge-pending'}">${ctoFlag ? 'Community Takeover' : 'Not Detected'}</span></div>
                     </div>
+                    `}
                     ${poolAddress ? `
                     <div class="detail-item">
                         <div class="label">DLMM Pool</div>

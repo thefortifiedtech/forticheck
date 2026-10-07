@@ -403,6 +403,93 @@ webServer.get('/api/alerts', (req, res) => {
             });
         } catch(e) {}
         
+        // 6. Smart Money Accumulation updates (from CTO Watchdog)
+        try {
+            const watchlistRows = db.prepare(`
+                SELECT token_address, chain, symbol, detected_at, initial_smart_money, initial_renowned,
+                       last_alerted_smart_money, last_alerted_renowned, golden_phoenix_alerted
+                FROM cto_watchlist 
+                WHERE last_alerted_smart_money > initial_smart_money
+                ORDER BY detected_at DESC 
+                LIMIT 50
+            `).all();
+            
+            watchlistRows.forEach((t: any) => {
+                const smartDelta = t.last_alerted_smart_money - t.initial_smart_money;
+                const ctoFlag = hasCtoFlag(t.chain, t.token_address);
+                const liveMigrated = isMigratedLive(t.chain, t.token_address);
+                
+                alerts.push({
+                    id: `sma_${t.token_address}`,
+                    type: 'SMART_MONEY_ACCUMULATION',
+                    source: 'CTO Watchdog',
+                    token_address: t.token_address,
+                    chain: t.chain,
+                    detected_at: t.detected_at,
+                    symbol: t.symbol,
+                    smart_money: t.last_alerted_smart_money,
+                    initial_smart_money: t.initial_smart_money,
+                    smart_delta: smartDelta,
+                    kol_count: t.initial_renowned,
+                    is_migrated: liveMigrated,
+                    golden_phoenix: t.golden_phoenix_alerted === 1,
+                    cto_flag: ctoFlag,
+                    reason: `Smart Money Accumulation: +${smartDelta} new smart wallets (total: ${t.last_alerted_smart_money})`,
+                    all_reasons: [
+                        `Smart Money Accumulation: +${smartDelta} new smart wallets`,
+                        `Initial: ${t.initial_smart_money} → Current: ${t.last_alerted_smart_money}`,
+                        ctoFlag ? 'CTO Flag: Community Takeover' : 'CTO Flag: Not detected',
+                        liveMigrated ? 'Migrated to DEX' : 'Bonding curve phase'
+                    ],
+                    color: 0x9B59B6 // Purple for updates
+                });
+            });
+        } catch(e) {}
+        
+        // 7. KOL Accumulation updates (from CTO Watchdog)
+        try {
+            const kolRows = db.prepare(`
+                SELECT token_address, chain, symbol, detected_at, initial_smart_money, initial_renowned,
+                       last_alerted_smart_money, last_alerted_renowned, golden_phoenix_alerted
+                FROM cto_watchlist 
+                WHERE last_alerted_renowned > initial_renowned
+                ORDER BY detected_at DESC 
+                LIMIT 50
+            `).all();
+            
+            kolRows.forEach((t: any) => {
+                const kolDelta = t.last_alerted_renowned - t.initial_renowned;
+                const ctoFlag = hasCtoFlag(t.chain, t.token_address);
+                const liveMigrated = isMigratedLive(t.chain, t.token_address);
+                
+                alerts.push({
+                    id: `kol_${t.token_address}`,
+                    type: 'KOL_ACCUMULATION',
+                    source: 'CTO Watchdog',
+                    token_address: t.token_address,
+                    chain: t.chain,
+                    detected_at: t.detected_at,
+                    symbol: t.symbol,
+                    smart_money: t.last_alerted_smart_money,
+                    initial_smart_money: t.initial_smart_money,
+                    kol_count: t.last_alerted_renowned,
+                    initial_kol_count: t.initial_renowned,
+                    kol_delta: kolDelta,
+                    is_migrated: liveMigrated,
+                    golden_phoenix: t.golden_phoenix_alerted === 1,
+                    cto_flag: ctoFlag,
+                    reason: `KOL Accumulation: +${kolDelta} new KOLs (total: ${t.last_alerted_renowned})`,
+                    all_reasons: [
+                        `KOL Accumulation: +${kolDelta} new renowned wallets`,
+                        `Initial: ${t.initial_renowned} → Current: ${t.last_alerted_renowned}`,
+                        ctoFlag ? 'CTO Flag: Community Takeover' : 'CTO Flag: Not detected',
+                        liveMigrated ? 'Migrated to DEX' : 'Bonding curve phase'
+                    ],
+                    color: 0x2ECC71 // Green for KOL updates
+                });
+            });
+        } catch(e) {}
+        
         // Sort by detected_at descending
         alerts.sort((a, b) => b.detected_at - a.detected_at);
         
@@ -413,7 +500,9 @@ webServer.get('/api/alerts', (req, res) => {
             dlmm: alerts.filter(a => a.type === 'DLMM_ALPHA').length,
             god_candle: alerts.filter(a => a.type === 'GOD_CANDLE').length,
             velocity: alerts.filter(a => a.type === 'VELOCITY_SCALP').length,
-            resurrection: alerts.filter(a => a.type === 'RESURRECTION').length
+            resurrection: alerts.filter(a => a.type === 'RESURRECTION').length,
+            smart_money_accumulation: alerts.filter(a => a.type === 'SMART_MONEY_ACCUMULATION').length,
+            kol_accumulation: alerts.filter(a => a.type === 'KOL_ACCUMULATION').length
         };
         
         res.json({ alerts: alerts.slice(0, 200), counts });
