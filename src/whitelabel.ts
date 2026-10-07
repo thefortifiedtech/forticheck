@@ -8,6 +8,11 @@ dotenv.config();
 const dbPath = process.env.DB_PATH || path.join(__dirname, '../whitelabel.db');
 const db = new Database(dbPath);
 
+// Enable WAL mode for concurrent database access (web dashboard + bot)
+db.exec('PRAGMA journal_mode=WAL;');
+
+export { db };
+
 // Initialize tables
 db.exec(`
     CREATE TABLE IF NOT EXISTS whitelabel_configs (
@@ -37,6 +42,29 @@ db.exec(`
         last_alerted_renowned INTEGER NOT NULL,
         golden_phoenix_alerted INTEGER DEFAULT 0,
         is_migrated INTEGER DEFAULT 0
+    );
+    -- GMGN API Cache Tables
+    CREATE TABLE IF NOT EXISTS gmgn_trenches_cache (
+        chain TEXT NOT NULL,
+        stage TEXT NOT NULL,
+        token_address TEXT NOT NULL,
+        data_json TEXT NOT NULL,
+        fetched_at INTEGER NOT NULL,
+        PRIMARY KEY (chain, stage, token_address)
+    );
+    CREATE TABLE IF NOT EXISTS gmgn_trending_cache (
+        chain TEXT NOT NULL,
+        token_address TEXT NOT NULL,
+        data_json TEXT NOT NULL,
+        fetched_at INTEGER NOT NULL,
+        PRIMARY KEY (chain, token_address)
+    );
+    CREATE TABLE IF NOT EXISTS gmgn_tokeninfo_cache (
+        chain TEXT NOT NULL,
+        token_address TEXT NOT NULL,
+        data_json TEXT NOT NULL,
+        fetched_at INTEGER NOT NULL,
+        PRIMARY KEY (chain, token_address)
     );
 `);
 
@@ -524,5 +552,111 @@ export function isSignalMigrated(event: any): boolean {
     if (event.migrated_pool_exchange || event.pool_type_str) return true;
     if (event.launchpad === '' || event.launchpad === undefined) return true;
     return true;
+}
+
+// GMGN Cache Functions
+const TRENCHES_TTL = 180; // seconds (3 min buffer for rate limit delays)
+const TRENDING_TTL = 180; // seconds
+const TOKENINFO_TTL = 300; // 5 minutes
+
+export function saveTrenchesCache(chain: string, stage: string, tokens: any[]): void {
+    try {
+        const now = Math.floor(Date.now() / 1000);
+        const stmt = db.prepare(`
+            INSERT OR REPLACE INTO gmgn_trenches_cache (chain, stage, token_address, data_json, fetched_at)
+            VALUES (?, ?, ?, ?, ?)
+        `);
+        const tx = db.transaction((tokens: any[]) => {
+            for (const token of tokens) {
+                stmt.run(chain, stage, token.address, JSON.stringify(token), now);
+            }
+        });
+        tx(tokens);
+    } catch (error) {
+        console.error(`[GMGN Cache] Error saving trenches cache:`, error);
+    }
+}
+
+export function getTrenchesCache(chain: string, stage: string, maxAgeSeconds: number = TRENCHES_TTL): any[] {
+    try {
+        const threshold = Math.floor(Date.now() / 1000) - maxAgeSeconds;
+        const rows = db.prepare(`
+            SELECT data_json FROM gmgn_trenches_cache 
+            WHERE chain = ? AND stage = ? AND fetched_at > ?
+        `).all(chain, stage, threshold) as any[];
+        return rows.map(r => JSON.parse(r.data_json));
+    } catch (error) {
+        console.error(`[GMGN Cache] Error reading trenches cache:`, error);
+        return [];
+    }
+}
+
+export function saveTrendingCache(chain: string, tokens: any[]): void {
+    try {
+        const now = Math.floor(Date.now() / 1000);
+        const stmt = db.prepare(`
+            INSERT OR REPLACE INTO gmgn_trending_cache (chain, token_address, data_json, fetched_at)
+            VALUES (?, ?, ?, ?)
+        `);
+        const tx = db.transaction((tokens: any[]) => {
+            for (const token of tokens) {
+                stmt.run(chain, token.address, JSON.stringify(token), now);
+            }
+        });
+        tx(tokens);
+    } catch (error) {
+        console.error(`[GMGN Cache] Error saving trending cache:`, error);
+    }
+}
+
+export function getTrendingCache(chain: string, maxAgeSeconds: number = TRENDING_TTL): any[] {
+    try {
+        const threshold = Math.floor(Date.now() / 1000) - maxAgeSeconds;
+        const rows = db.prepare(`
+            SELECT data_json FROM gmgn_trending_cache 
+            WHERE chain = ? AND fetched_at > ?
+        `).all(chain, threshold) as any[];
+        return rows.map(r => JSON.parse(r.data_json));
+    } catch (error) {
+        console.error(`[GMGN Cache] Error reading trending cache:`, error);
+        return [];
+    }
+}
+
+export function saveTokenInfoCache(chain: string, tokenAddress: string, data: any): void {
+    try {
+        const now = Math.floor(Date.now() / 1000);
+        db.prepare(`
+            INSERT OR REPLACE INTO gmgn_tokeninfo_cache (chain, token_address, data_json, fetched_at)
+            VALUES (?, ?, ?, ?)
+        `).run(chain, tokenAddress, JSON.stringify(data), now);
+    } catch (error) {
+        console.error(`[GMGN Cache] Error saving tokeninfo cache:`, error);
+    }
+}
+
+export function getTokenInfoCache(chain: string, tokenAddress: string, maxAgeSeconds: number = TOKENINFO_TTL): any | null {
+    try {
+        const threshold = Math.floor(Date.now() / 1000) - maxAgeSeconds;
+        const row = db.prepare(`
+            SELECT data_json FROM gmgn_tokeninfo_cache 
+            WHERE chain = ? AND token_address = ? AND fetched_at > ?
+        `).get(chain, tokenAddress, threshold) as any;
+        return row ? JSON.parse(row.data_json) : null;
+    } catch (error) {
+        console.error(`[GMGN Cache] Error reading tokeninfo cache:`, error);
+        return null;
+    }
+}
+
+export function pruneGMGNCache(maxAgeSeconds: number = 3600): void {
+    try {
+        const threshold = Math.floor(Date.now() / 1000) - maxAgeSeconds;
+        db.prepare('DELETE FROM gmgn_trenches_cache WHERE fetched_at < ?').run(threshold);
+        db.prepare('DELETE FROM gmgn_trending_cache WHERE fetched_at < ?').run(threshold);
+        db.prepare('DELETE FROM gmgn_tokeninfo_cache WHERE fetched_at < ?').run(threshold);
+    } catch (error) {
+        console.error(`[GMGN Cache] Error pruning cache:`, error);
+    }
 }
 

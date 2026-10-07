@@ -194,13 +194,89 @@ def save_watchlist(active_tokens, chain='bsc'):
         print(f"Error syncing watchlist to DB: {e}")
 
 def get_token_info(mint):
-    cmd = ["npx", "gmgn-cli", "token", "info", "--chain", "bsc", "--address", mint, "--raw"]
+    """Fetch token info from GMGN cache (populated by gmgn-fetcher service), with fallback to live CLI"""
+    # Try cache first
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        return json.loads(result.stdout)
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        
+        # Read from cache (5 minute TTL)
+        threshold = int(time.time()) - 300
+        cursor.execute("""
+            SELECT data_json FROM gmgn_tokeninfo_cache 
+            WHERE chain = 'bsc' AND token_address = ? AND fetched_at > ?
+        """, (mint, threshold))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            return json.loads(row[0])
     except Exception as e:
-        print(f"Error fetching token info for {mint}: {e}")
-        return None
+        print(f"Error reading token info from cache: {e}")
+    
+    # Fallback: fetch from GMGN CLI with rate limit handling
+    print(f"[BSC CTO Watchdog] Token {mint} not in cache, fetching from GMGN CLI...")
+    return fetch_token_info_cli(mint, 'bsc')
+
+def fetch_token_info_cli(mint, chain):
+    """Fetch token info from GMGN CLI with rate limit handling"""
+    max_retries = 3
+    base_delay = 5
+    
+    for attempt in range(max_retries):
+        try:
+            cmd = ["npx", "gmgn-cli", "token", "info", "--chain", chain, "--address", mint, "--raw"]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            if result.returncode == 0:
+                data = json.loads(result.stdout)
+                # Cache the result
+                try:
+                    conn = sqlite3.connect(DB_FILE)
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO gmgn_tokeninfo_cache (chain, token_address, data_json, fetched_at)
+                        VALUES (?, ?, ?, ?)
+                    """, (chain, mint, json.dumps(data), int(time.time())))
+                    conn.commit()
+                    conn.close()
+                except Exception as e:
+                    print(f"Error caching token info: {e}")
+                return data
+            
+            # Check for rate limit
+            stderr = result.stderr or ""
+            if '429' in stderr or 'RATE_LIMIT_BANNED' in stderr or 'rate limit' in stderr.lower():
+                # Parse reset time
+                import re
+                reset_match = re.search(r'resets at ([\d\-: ]+ GMT)', stderr)
+                wait_time = base_delay * (2 ** attempt)  # Exponential backoff
+                
+                if reset_match:
+                    reset_str = reset_match.group(1)
+                    try:
+                        from datetime import datetime
+                        reset_time = datetime.strptime(reset_str, '%Y-%m-%d %H:%M:%S GMT')
+                        wait_time = max(wait_time, (reset_time - datetime.utcnow()).total_seconds() + 5)
+                    except Exception:
+                        pass
+                
+                print(f"[BSC CTO Watchdog] Rate limited, waiting {wait_time:.0f}s before retry {attempt + 1}/{max_retries}")
+                time.sleep(wait_time)
+                continue
+            
+            print(f"Error fetching token info for {mint}: {stderr}")
+            return None
+            
+        except subprocess.TimeoutExpired:
+            print(f"Timeout fetching token info for {mint}")
+            return None
+        except Exception as e:
+            print(f"Error fetching token info for {mint}: {e}")
+            return None
+    
+    print(f"[BSC CTO Watchdog] Max retries exceeded for {mint}")
+    return None
 
 def watchdog_cycle():
     print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] Running BSC CTO Watchdog...")

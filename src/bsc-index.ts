@@ -1,7 +1,7 @@
 import { Client, GatewayIntentBits, Events, AttachmentBuilder, TextChannel } from 'discord.js';
 import * as dotenv from 'dotenv';
 import { GMGNAgent } from './gmgn-sdk';
-import { syncNicknamesOnStartup, handleWhiteLabelCommands, broadcastBscAlert, customizeEmbedForGuild, hasSeenToken, addSeenToken, pruneSeenTokens, addTokenToWatchlist, isSignalMigrated } from './whitelabel';
+import { syncNicknamesOnStartup, handleWhiteLabelCommands, broadcastBscAlert, customizeEmbedForGuild, hasSeenToken, addSeenToken, pruneSeenTokens, addTokenToWatchlist, isSignalMigrated, getTrenchesCache, getTrendingCache, getTokenInfoCache } from './whitelabel';
 
 dotenv.config();
 
@@ -229,20 +229,25 @@ client.once(Events.ClientReady, c => {
     // Sync nicknames on startup for registered servers
     syncNicknamesOnStartup(c);
     
-    // Poll GMGN Signals for CTO events
+    // Poll GMGN Signals for CTO events (reading from centralized cache)
     console.log('🚀 BSC Phoenix Scanner Active: Watching for CTOs...');
-
-    setInterval(async () => {
+    
+    async function pollSignals() {
         try {
             // Prune seen tokens older than 24 hours
             pruneSeenTokens('bsc', 24 * 3600);
-
-            const [trenches, trending] = await Promise.all([
-                gmgn.getTrenchesData(),
-                gmgn.getTrendingData()
-            ]);
             
-            const signals = [...trenches, ...trending];
+            // Read from centralized GMGN cache (populated by gmgn-fetcher service)
+            const trenchesNew = getTrenchesCache('bsc', 'NEW_CREATION', 90);
+            const trenchesFull = getTrenchesCache('bsc', 'FULL_ALERT', 90);
+            const trending = getTrendingCache('bsc', 90);
+            
+            const signals = [...trenchesNew, ...trenchesFull, ...trending];
+            
+            if (signals.length === 0) {
+                console.log('[BSC Phoenix Scanner] No signals in cache yet, waiting for fetcher...');
+                return;
+            }
             
             for (const event of signals) {
                 const tokenAddress = event.address;
@@ -250,7 +255,7 @@ client.once(Events.ClientReady, c => {
                 const isCto = event.cto_flag === 1 || event.cto_flag === true;
                 
                 if (!isCto || hasSeenToken(tokenAddress, 'bsc')) continue;
-                if (event.rug_ratio >= 1) continue; // Skip 100% rugged tokens
+                if (event.rug_ratio >= 1) continue;
                 
                 addSeenToken(tokenAddress, 'bsc');
                 
@@ -258,32 +263,30 @@ client.once(Events.ClientReady, c => {
                 const renownedCount = event.renowned_count || 0;
                 const marketCap = parseFloat(event.usd_market_cap) || parseFloat(event.market_cap) || 0;
                 
-                // Filter out old CTOs that have been trading for > 24 hours
                 const trueCreationTimestamp = event.created_timestamp || event.creation_timestamp || event.open_timestamp || 0;
                 const ageInHours = trueCreationTimestamp > 0 ? (Math.floor(Date.now() / 1000) - trueCreationTimestamp) / 3600 : 0;
                 if (ageInHours > 120) continue;
                 
-                // Filter out resurrected tokens where the social profile/dex info was updated > 24h ago
                 const socialUpdateTimestamp = event.dexscr_update_link_ts || 0;
                 const socialAgeInHours = socialUpdateTimestamp > 0 ? (Math.floor(Date.now() / 1000) - socialUpdateTimestamp) / 3600 : 0;
                 if (socialAgeInHours > 120) continue;
                 
-                // Check if signal has migrated
                 const isMigratedInitial = isSignalMigrated(event);
-
-                // Add EVERY CTO to the Watchlist for 60-minute monitoring, even if smart money is 0
+    
                 addTokenToWatchlist(tokenAddress, symbol, 'bsc', smartDegenCount, renownedCount, isMigratedInitial ? 1 : 0);
                 
-                // Noise Filter: Must have >= 5 smart money OR >= 1 KOL, AND be alive (>$10k mcap)
                 if ((smartDegenCount >= 5 || renownedCount >= 1) && marketCap > 10000) {
-                    // Fetch tokenInfo to get the most accurate, live migration status
-                    const tokenInfo = await gmgn.getTokenInfo(tokenAddress);
+                    let tokenInfo = getTokenInfoCache('bsc', tokenAddress, 300);
+                    if (!tokenInfo) {
+                        console.log(`[BSC Phoenix] Token info not in cache for ${tokenAddress}, skipping alert (fetcher will cache it next cycle)`);
+                        continue;
+                    }
                     const isMigratedLive = tokenInfo.launchpad !== 'pump' && tokenInfo.launchpad !== 'Pump.fun' || tokenInfo.launchpad_progress >= 1;
-
-                    let color = 0x3498DB; // BLUE
+    
+                    let color = 0x3498DB;
                     let title = isMigratedLive ? "💎 BSC PHOENIX: Community Takeover" : "💎 [BSC PRE-ALERT] PHOENIX: Community Takeover";
                     let description = `Dev exited, community taking the lead.\n\`${tokenAddress}\``;
-
+    
                     const embed = {
                         color,
                         title,
@@ -294,32 +297,24 @@ client.once(Events.ClientReady, c => {
                             { name: "KOLs (Renowned)", value: String(renownedCount), inline: true }
                         ],
                         timestamp: new Date().toISOString(),
-                        footer: {
-                            text: 'BSC Phoenix Scanner Auto-Signal',
-                        },
+                        footer: { text: 'BSC Phoenix Scanner Auto-Signal' },
                     };
-
+    
                     const dexLinkTarget = event.pool_address || tokenAddress;
-                    embed.fields.push({
-                        name: "DexScreener",
-                        value: `[📈 View on DexScreener](https://dexscreener.com/bsc/${dexLinkTarget})`,
-                        inline: false
-                    });
-                    
-                    embed.fields.push({
-                        name: "GMGN Chart",
-                        value: `[📈 View on GMGN](https://gmgn.ai/bsc/token/${tokenAddress})`,
-                        inline: false
-                    });
-
+                    embed.fields.push({ name: "DexScreener", value: `[📈 View on DexScreener](https://dexscreener.com/bsc/${dexLinkTarget})`, inline: false });
+                    embed.fields.push({ name: "GMGN Chart", value: `[📈 View on GMGN](https://gmgn.ai/bsc/token/${tokenAddress})`, inline: false });
+    
                     await broadcastBscAlert(client, embed, symbol, tokenAddress);
                 }
             }
             
         } catch (error) {
-            console.error("Error polling BSC signals:", error);
+            console.error("Error polling signals:", error);
         }
-    }, 15000); // Poll every 15 seconds
+    }
+    
+    // Poll every 15 seconds (reads from local cache, no API calls)
+    setInterval(pollSignals, 15000);
 });
 
 client.on(Events.MessageCreate, async (message) => {

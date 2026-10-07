@@ -90,18 +90,30 @@ def add_seen_token(address):
         print(f"Error adding token to DB: {e}")
 
 def get_gmgn_trending():
-    """Fetch 100 trending tokens from GMGN"""
-    cmd = ["npx", "gmgn-cli", "market", "trending", "--chain", "sol", "--interval", "1m", "--limit", "100", "--raw"]
+    """Fetch 100 trending tokens from GMGN cache (populated by gmgn-fetcher service)"""
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        res_json = json.loads(result.stdout)
-        if "data" in res_json and "rank" in res_json["data"]:
-            return res_json["data"]["rank"]
-        return []
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        
+        # Read from cache (90 second TTL)
+        threshold = int(time.time()) - 90
+        cursor.execute("""
+            SELECT data_json FROM gmgn_trending_cache 
+            WHERE chain = 'sol' AND fetched_at > ?
+        """, (threshold,))
+        rows = cursor.fetchall()
+        conn.close()
+        
+        tokens = []
+        for row in rows:
+            tokens.append(json.loads(row[0]))
+            
+        if not tokens:
+            print("[God Candle] No trending tokens in cache yet, waiting for fetcher...")
+            
+        return tokens
     except Exception as e:
-        print(f"Error fetching trending from GMGN: {e}")
-        if 'result' in locals() and result.stderr:
-            print(f"CLI Error: {result.stderr}")
+        print(f"Error reading trending from cache: {e}")
         return []
 
 def send_discord_message(content, embed=None):

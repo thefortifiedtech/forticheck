@@ -1,5 +1,5 @@
-# Use Node.js 20-slim as the base image
-FROM node:20-slim
+# Use Node.js 22-slim as the base image
+FROM node:22-slim
 
 # Install Python 3, build tools, and sqlite3
 RUN apt-get update && apt-get install -y \
@@ -24,6 +24,12 @@ COPY . .
 
 # Build TypeScript source code
 RUN npm run build
+
+# Copy static files to dist directory for web server
+COPY src/web/static dist/web/static
+
+# Expose web dashboard port
+EXPOSE 3001
 
 # Default start command (can be overridden in docker-compose)
 CMD ["node", "dist/index.js"]

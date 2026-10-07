@@ -8,6 +8,11 @@ export class GMGNAgent {
     private apiKey: string;
     private privateKeyPath: string;
     public chain: string;
+    
+    // Rate limit state
+    private rateLimitResetTime = 0;
+    private consecutiveRateLimits = 0;
+    private isRateLimited = false;
 
     constructor(options: { apiKey: string, privateKeyPath: string, chain?: string }) {
         this.apiKey = options.apiKey;
@@ -27,15 +32,52 @@ export class GMGNAgent {
         return new Promise((resolve, reject) => {
             this.requestQueue.push(async () => {
                 try {
-                    const { stdout } = await execAsync(command, { 
+                    const { stdout, stderr } = await execAsync(command, { 
                         env: { 
                             ...process.env, 
                             ...envOverrides,
                             HOME: '/tmp/empty-home' // Sandbox CLI to prevent it from reading global ~/.config/gmgn/.env
                         } 
                     });
+                    
+                    // Check for rate limit in stderr
+                    if (this.handleRateLimit(stderr)) {
+                        // Re-queue this command after waiting
+                        this.requestQueue.unshift(async () => {
+                            const { stdout: retryStdout } = await execAsync(command, { 
+                                env: { 
+                                    ...process.env, 
+                                    ...envOverrides,
+                                    HOME: '/tmp/empty-home'
+                                } 
+                            });
+                            resolve(retryStdout);
+                        });
+                        return;
+                    }
+                    
                     resolve(stdout);
-                } catch (err) {
+                } catch (err: any) {
+                    // Check for rate limit in error message
+                    const stderr = err.stderr || err.message || '';
+                    if (this.handleRateLimit(stderr)) {
+                        // Re-queue this command after waiting
+                        this.requestQueue.unshift(async () => {
+                            try {
+                                const { stdout: retryStdout } = await execAsync(command, { 
+                                    env: { 
+                                        ...process.env, 
+                                        ...envOverrides,
+                                        HOME: '/tmp/empty-home'
+                                    } 
+                                });
+                                resolve(retryStdout);
+                            } catch (retryErr) {
+                                reject(retryErr);
+                            }
+                        });
+                        return;
+                    }
                     reject(err);
                 }
             });
@@ -43,11 +85,75 @@ export class GMGNAgent {
         });
     }
 
+    private handleRateLimit(stderr: string): boolean {
+        const msg = stderr || "";
+        if (msg.includes('429') || msg.includes('RATE_LIMIT_BANNED') || msg.toLowerCase().includes('rate limit')) {
+            // Parse reset time from error message (e.g., "resets at 2026-10-06 23:34:06 GMT+00:00")
+            let resetMatch = msg.match(/resets at ([\d\-: ]+ GMT[\+\-]\d{2}:\d{2})/);
+            if (!resetMatch) {
+                resetMatch = msg.match(/resets at ([\d\-: ]+ GMT)/);
+            }
+            if (resetMatch) {
+                const resetStr = resetMatch[1];
+                try {
+                    const resetTime = new Date(resetStr).getTime();
+                    if (!isNaN(resetTime)) {
+                        this.rateLimitResetTime = resetTime;
+                        console.log(`[GMGN SDK] Parsed rate limit reset time: ${new Date(resetTime).toISOString()}`);
+                    }
+                } catch (e) {
+                    // ignore parse error
+                }
+            }
+            
+            // If no parseable time, use exponential backoff
+            if (this.rateLimitResetTime <= Date.now()) {
+                this.consecutiveRateLimits++;
+                const backoffMs = Math.min(15000 * Math.pow(2, this.consecutiveRateLimits), 300000);
+                this.rateLimitResetTime = Date.now() + backoffMs;
+                console.log(`[GMGN SDK Rate Limit] No reset time parsed, backing off ${backoffMs/1000}s`);
+            }
+            
+            const waitMs = Math.max(0, this.rateLimitResetTime - Date.now()) + 5000;
+            console.log(`[GMGN SDK Rate Limit] Detected, pausing queue for ${Math.ceil(waitMs/1000)}s until ${new Date(this.rateLimitResetTime).toISOString()}`);
+            
+            this.isRateLimited = true;
+            
+            // Resume queue after cooldown
+            setTimeout(() => {
+                this.consecutiveRateLimits = 0;
+                this.isRateLimited = false;
+                this.processQueue();
+            }, waitMs);
+            
+            return true;
+        }
+        return false;
+    }
+
     private async processQueue() {
         if (this.isProcessingQueue) return;
+        
+        // Check if we're in a rate limit cooldown
+        if (this.isRateLimited || this.rateLimitResetTime > Date.now()) {
+            const waitMs = Math.max(0, this.rateLimitResetTime - Date.now()) + 5000;
+            console.log(`[GMGN SDK] Rate limit cooldown, waiting ${Math.ceil(waitMs/1000)}s before processing queue`);
+            setTimeout(() => this.processQueue(), waitMs);
+            return;
+        }
+        
         this.isProcessingQueue = true;
 
         while (this.requestQueue.length > 0) {
+            // Check for rate limit before each request
+            if (this.isRateLimited || this.rateLimitResetTime > Date.now()) {
+                const waitMs = Math.max(0, this.rateLimitResetTime - Date.now()) + 5000;
+                console.log(`[GMGN SDK] Rate limit hit during processing, waiting ${Math.ceil(waitMs/1000)}s`);
+                setTimeout(() => this.processQueue(), waitMs);
+                this.isProcessingQueue = false;
+                return;
+            }
+            
             const task = this.requestQueue.shift();
             if (task) {
                 await task();

@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  web:
+    build: .
+    container_name: forticheck-web
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+      - WEB_PORT=3001
+      - DB_PATH=/app/db/whitelabel.db
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./db:/app/db
+    command: node dist/index.js
+
   solana-bot:
     build: .
     container_name: forticheck-solana-bot
@@ -9,6 +25,7 @@ services:
       - .env
     environment:
       - DB_PATH=/app/db/whitelabel.db
+      - WEB_PORT=3001
     volumes:
       - ./db:/app/db
     command: node dist/index.js
@@ -89,6 +106,18 @@ services:
     volumes:
       - ./db:/app/db
     command: python3 god_candle_watchdog.py
+
+  gmgn-fetcher:
+    build: .
+    container_name: forticheck-gmgn-fetcher
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/db/whitelabel.db
+    volumes:
+      - ./db:/app/db
+    command: node dist/gmgn-fetcher.js
 
 volumes:
   db:

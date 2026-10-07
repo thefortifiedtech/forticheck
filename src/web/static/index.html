@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FortiCheck - Solana Token Scanner Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 2rem 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #888;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card h2 {
+            font-size: 0.9rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        th {
+            color: #888;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-active {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        
+        .status-inactive {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+        
+        .chain-solana {
+            color: #00d4ff;
+        }
+        
+        .chain-bsc {
+            color: #ff6b35;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(45deg, #00d4ff, #00ff88);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            color: #0a0a1a;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .token-address {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.75rem;
+            color: #888;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #888;
+        }
+        
+        .error {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            color: #ff6b6b;
+        }
+        
+        .refresh-interval {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .refresh-interval label {
+            color: #888;
+            font-size: 0.85rem;
+        }
+        
+        select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.5rem;
+            border-radius: 6px;
+            color: #e0e0e0;
+            outline: none;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+        
+        .pull-right {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        
+        .pull-right h3 {
+            color: #00d4ff;
+        }
+        
+        /* Detail Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+        
+        .modal-content {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: linear-gradient(135deg, #1a1a3a 0%, #0a0a1a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-modal:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .modal-body {
+            padding: 2rem;
+        }
+        
+        .alert-reason {
+            background: rgba(255, 212, 0, 0.1);
+            border-left: 4px solid #ffd700;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-reason h3 {
+            color: #ffd700;
+            margin: 0 0 0.5rem 0;
+            font-size: 1rem;
+        }
+        
+        .alert-reason p {
+            margin: 0;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .detail-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .detail-item .label {
+            font-size: 0.7rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-item .value {
+            font-size: 1rem;
+            margin-top: 0.25rem;
+        }
+        
+        .signal-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .badge-smart {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+        
+        .badge-kol {
+            background: rgba(255, 105, 180, 0.2);
+            color: #ff69b4;
+        }
+        
+        .badge-migrated {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        
+        .badge-pending {
+            background: rgba(255, 165, 0, 0.2);
+            color: #ffa500;
+        }
+        
+        .badge-golden {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+        
+        .links-section {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .link-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        .link-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .link-gmgn {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+        
+        .link-dex {
+            background: rgba(255, 105, 180, 0.2);
+            color: #ff69b4;
+            border: 1px solid rgba(255, 105, 180, 0.3);
+        }
+        
+        .link-solscan {
+            background: rgba(136, 136, 136, 0.2);
+            color: #888;
+            border: 1px solid rgba(136, 136, 136, 0.3);
+        }
+        
+        .clickable-row {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .clickable-row:hover {
+            background: rgba(0, 212, 255, 0.1) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 FortiCheck Dashboard</h1>
+            <p>Real-Time Multi-Scanner Alert Feed</p>
+        </div>
+        
+        <!-- Stats Row -->
+        <div class="grid">
+            <div class="card" id="stats-card">
+                <h2>Total Alerts</h2>
+                <div class="value" id="total-alerts">-</div>
+            </div>
+            <div class="card" id="phoenix-card">
+                <h2> phoenix Alerts</h2>
+                <div class="value" id="phoenix-count">-</div>
+            </div>
+            <div class="card" id="dlmm-card">
+                <h2>DLMM Alpha</h2>
+                <div class="value" id="dlmm-count">-</div>
+            </div>
+            <div class="card" id="godcandle-card">
+                <h2>God Candles</h2>
+                <div class="value" id="godcandle-count">-</div>
+            </div>
+        </div>
+        
+        <!-- Filter Bar -->
+        <div class="pull-right">
+            <h3>Real-Time Alert Feed</h3>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <select id="type-filter" onchange="filterAlerts()">
+                    <option value="all">All Types</option>
+                    <option value="CTO_PHOENIX"> phoenix</option>
+                    <option value="DLMM_ALPHA">DLMM Alpha</option>
+                    <option value="GOD_CANDLE">God Candle</option>
+                    <option value="VELOCITY_SCALP">Velocity Scalp</option>
+                    <option value="RESURRECTION">Resurrection</option>
+                </select>
+                <select id="chain-filter" onchange="filterAlerts()">
+                    <option value="all">All Chains</option>
+                    <option value="sol">Solana</option>
+                    <option value="bsc">BSC</option>
+                </select>
+                <button class="refresh-btn" onclick="refreshAll()" style="padding: 0.5rem 1rem; margin: 0;">Refresh</button>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem; padding-left: 1rem; border-left: 1px solid rgba(255,255,255,0.1);">
+                    <label style="color: #888; font-size: 0.85rem;">Auto-refresh:</label>
+                    <select id="refresh-interval" onchange="updateRefreshInterval()">
+                        <option value="0">Off</option>
+                        <option value="15000">15s</option>
+                        <option value="30000" selected>30s</option>
+                        <option value="60000">1m</option>
+                    </select>
+                    <span id="refresh-status" style="color: #00ff88; font-size: 0.75rem;">● Live</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alert Feed -->
+        <div class="section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Source</th>
+                        <th>Token</th>
+                        <th>Symbol</th>
+                        <th>Alert Reason</th>
+                        <th>Detected</th>
+                    </tr>
+                </thead>
+                <tbody id="alerts-table">
+                    <tr><td colspan="6" class="loading">Loading alerts...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Detail Modal -->
+    <div class="modal" id="detail-modal" onclick="if(event.target === this) closeModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Token Details</h2>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+    
+    <script>
+let refreshInterval = parseInt(document.getElementById('refresh-interval')?.value || '30000');
+        let refreshTimer;
+        let alertsCache = [];
+        
+        const API_BASE = '/api';
+        
+async function fetchStats() {
+            try {
+                const response = await fetch(`${API_BASE}/alerts`);
+                const data = await response.json();
+                
+                // data is now { alerts: [...], counts: {...} }
+                const counts = data.counts || {};
+                
+                document.getElementById('total-alerts').textContent = counts.total || 0;
+                document.getElementById('phoenix-count').textContent = counts.phoenix || 0;
+                document.getElementById('dlmm-count').textContent = counts.dlmm || 0;
+                document.getElementById('godcandle-count').textContent = counts.god_candle || 0;
+                
+                // Also fetch stats endpoint for other stats
+                const statsResponse = await fetch(`${API_BASE}/stats`);
+                const statsData = await statsResponse.json();
+                
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+        
+        async function fetchAlerts(chain = 'all', type = 'all') {
+            try {
+                const response = await fetch(`${API_BASE}/alerts`);
+                let data = await response.json();
+                
+                // data is { alerts: [...], counts: {...} }
+                let alerts = data.alerts || [];
+                
+                // Filter by chain
+                if (chain !== 'all') {
+                    alerts = alerts.filter(function(t) { 
+                        return t.chain.toLowerCase() === chain; 
+                    });
+                }
+                
+                // Filter by type
+                if (type !== 'all') {
+                    alerts = alerts.filter(function(t) { 
+                        return t.type === type; 
+                    });
+                }
+                
+                // Store in cache for detail modal
+                alertsCache = alerts;
+                
+                const tbody = document.getElementById('alerts-table');
+                if (alerts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">No alerts found</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = alerts.map(function(alert, index) {
+                    const source = alert.source === 'Phoenix Scanner' ? 'Phoenix' : 
+                                  alert.source === 'DLMM Alpha Scanner' ? 'DLMM Alpha' : 
+                                  alert.source === 'God Candle Watchdog' ? 'God Candle' : 
+                                  alert.source === 'Velocity Scalp Finder' ? 'Velocity Scalp' : 
+                                  alert.source === 'Resurrection Scanner' ? 'Resurrection' : 'Unknown';
+                                  
+                    const tokenDisplay = alert.token_address.length > 16 ? 
+                                       alert.token_address.substring(0, 16) + '...' : 
+                                       alert.token_address;
+                     
+                    const reasons = alert.all_reasons || [alert.reason];
+                     
+                    return `
+                    <tr class="clickable-row" onclick="showTokenDetail(${index})">
+                        <td>${alert.type}</td>
+                        <td>${source}</td>
+                        <td><span class="token-address">${tokenDisplay}</span></td>
+                        <td>${alert.symbol || '-'}</td>
+                        <td class="alert-reason">
+                            ${reasons.map(function(reason) {
+                                const badgeClass = reason.includes('Golden Phoenix') ? 'badge-golden' : 
+                                                 reason.includes('Smart Money') ? 'badge-smart' : 
+                                                 reason.includes('KOL') ? 'badge-kol' : 
+                                                 reason.includes('Migrated') ? 'badge-migrated' : 
+                                                 reason.includes('Pre-migration') ? 'badge-pending' : 
+                                                 reason.includes('Resurrection') ? 'badge-golden' : 
+                                                 reason.includes('Velocity') ? 'badge-smart' : 
+                                                 reason.includes('Breakout') ? 'badge-golden' : 
+                                                 reason.includes('CTO Flag: Community Takeover') ? 'badge-golden' :
+                                                 reason.includes('CTO Flag') ? 'badge-pending' : 'badge-pending';
+                                return `<span class="signal-badge ${badgeClass}">${reason}</span><br>`;
+                            }).join('')}
+                        </td>
+                        <td>${formatTimestamp(alert.detected_at)}</td>
+                    </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error fetching alerts:', error);
+                document.getElementById('alerts-table').innerHTML = 
+                    '<tr><td colspan="6" class="error">Error loading alerts</td></tr>';
+            }
+        }
+        
+        async function refreshAll() {
+            await fetchStats();
+            await fetchAlerts();
+        }
+        
+        function filterAlerts() {
+            const type = document.getElementById('type-filter').value;
+            const chain = document.getElementById('chain-filter').value;
+            fetchAlerts(chain, type);
+        }
+        
+        function updateRefreshInterval() {
+            const value = document.getElementById('refresh-interval').value;
+            refreshInterval = parseInt(value);
+            const statusEl = document.getElementById('refresh-status');
+            
+            // Clear existing interval
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
+            
+            // Update status indicator
+            if (statusEl) {
+                if (refreshInterval > 0) {
+                    statusEl.textContent = '● Live';
+                    statusEl.style.color = '#00ff88';
+                } else {
+                    statusEl.textContent = '● Paused';
+                    statusEl.style.color = '#ff4444';
+                }
+            }
+            
+            // Start new interval if enabled
+            if (refreshInterval > 0) {
+                refreshTimer = setInterval(refreshAll, refreshInterval);
+            }
+        }
+        
+        function formatTimestamp(unixTimestamp) {
+            if (!unixTimestamp) return '-';
+            const date = new Date(unixTimestamp * 1000);
+            const now = new Date();
+            const diffHours = Math.floor((now.getTime() - date.getTime()) / 1000 / 3600);
+            
+            if (diffHours < 1) {
+                const diffMins = Math.floor((now.getTime() - date.getTime()) / 1000 / 60);
+                return `${diffMins}m ago`;
+            } else if (diffHours < 24) {
+                return `${diffHours}h ago`;
+            } else {
+                const diffDays = Math.floor(diffHours / 24);
+                return `${diffDays}d ago`;
+            }
+        }
+        
+        async function showTokenDetail(index) {
+            const alert = alertsCache[index];
+            if (!alert) return;
+            
+            const modal = document.getElementById('detail-modal');
+            const modalBody = document.getElementById('modal-body');
+            const modalTitle = document.getElementById('modal-title');
+            
+            modal.style.display = 'block';
+            
+            const tokenAddress = alert.token_address;
+            const chain = alert.chain;
+            const symbol = alert.symbol || 'Unknown';
+            const reasons = alert.all_reasons || [alert.reason];
+            const smartMoney = alert.smart_money || 0;
+            const kol = alert.kol_count || 0;
+            const isMigrated = alert.is_migrated === true || alert.is_migrated === 1;
+            const golden = alert.golden_phoenix === true || alert.golden_phoenix === 1;
+            const ctoFlag = alert.cto_flag === true;
+            const detectedAt = alert.detected_at;
+            const poolAddress = alert.pool_address;
+            const poolLinks = alert.pool_links;
+            
+            modalTitle.textContent = `${symbol} - Alert Details`;
+            
+            const gmgnUrl = `https://gmgn.ai/${chain === 'sol' ? 'sol' : 'bsc'}/token/${tokenAddress}`;
+            const dexUrl = `https://dexscreener.com/${chain === 'sol' ? 'solana' : 'bsc'}/${tokenAddress}`;
+            const solscanUrl = chain === 'sol' ? `https://solscan.io/token/${tokenAddress}` : '';
+            
+            // Build extra links for DLMM alerts
+            let extraLinks = '';
+            if (alert.type === 'DLMM_ALPHA' && poolLinks) {
+                extraLinks = `
+                    <a class="link-btn link-dex" href="${poolLinks.meteora}" target="_blank">🌊 Meteora Pool</a>
+                    <a class="link-btn link-dex" href="${poolLinks.hawkfi}" target="_blank">⚡ HawkFi</a>
+                `;
+            }
+            
+            modalBody.innerHTML = `
+                <div class="alert-reason">
+                    <h3>📌 Why This Token Was Alerted</h3>
+                    <p>${reasons.join('<br>')}</p>
+                </div>
+                
+                <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="label">Token Address</div>
+                    <div class="value token-address" style="word-break: break-all; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.8rem;">${tokenAddress}</div>
+                </div>
+                
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="label">Symbol</div>
+                        <div class="value">${symbol}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Chain</div>
+                        <div class="value" class="${chain === 'sol' ? 'chain-solana' : 'chain-bsc'}">${chain === 'sol' ? 'Solana' : 'BSC'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Detected</div>
+                        <div class="value">${formatTimestamp(detectedAt)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Smart Money</div>
+                        <div class="value"><span class="signal-badge badge-smart">${smartMoney} wallets</span></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">KOLs (Renowned)</div>
+                        <div class="value"><span class="signal-badge badge-kol">${kol} wallets</span></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Migration Status</div>
+                        <div class="value"><span class="signal-badge ${isMigrated ? 'badge-migrated' : 'badge-pending'}">${isMigrated ? 'Migrated' : 'Pending'}</span></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Golden Phoenix</div>
+                        <div class="value"><span class="signal-badge ${golden ? 'badge-golden' : 'badge-pending'}">${golden ? 'YES' : 'No'}</span></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">CTO Flag</div>
+                        <div class="value"><span class="signal-badge ${ctoFlag ? 'badge-golden' : 'badge-pending'}">${ctoFlag ? 'Community Takeover' : 'Not Detected'}</span></div>
+                    </div>
+                    ${poolAddress ? `
+                    <div class="detail-item">
+                        <div class="label">DLMM Pool</div>
+                        <div class="value token-address" style="word-break: break-all; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.75rem;">${poolAddress}</div>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="links-section">
+                    <a class="link-btn link-gmgn" href="${gmgnUrl}" target="_blank">📈 GMGN Chart</a>
+                    <a class="link-btn link-dex" href="${dexUrl}" target="_blank">💧 DexScreener</a>
+                    ${solscanUrl ? `<a class="link-btn link-solscan" href="${solscanUrl}" target="_blank">🔍 Solscan</a>` : ''}
+                    ${extraLinks}
+                </div>
+            `;
+        }
+        
+        function closeModal() {
+            document.getElementById('detail-modal').style.display = 'none';
+        }
+        
+        async function init() {
+            await refreshAll();
+            
+            if (refreshInterval > 0) {
+                refreshTimer = setInterval(refreshAll, refreshInterval);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>
+</content>

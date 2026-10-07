@@ -100,24 +100,60 @@ def add_seen_token(address, is_resurrected=False):
         print(f"Error adding token to DB: {e}")
 
 def get_gmgn_trending(min_created=None, max_created=None):
-    """Fetch trending tokens from GMGN with optional age filters"""
-    cmd = ["npx", "gmgn-cli", "market", "trending", "--chain", "sol", "--interval", "1m", "--limit", "50", "--raw"]
-    if min_created:
-        cmd.extend(["--min-created", min_created])
-    if max_created:
-        cmd.extend(["--max-created", max_created])
-        
+    """Fetch trending tokens from GMGN cache (populated by gmgn-fetcher service)"""
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        res_json = json.loads(result.stdout)
-        if "data" in res_json and "rank" in res_json["data"]:
-            return res_json["data"]["rank"]
-        return []
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        
+        # Read from cache (90 second TTL)
+        threshold = int(time.time()) - 90
+        cursor.execute("""
+            SELECT data_json FROM gmgn_trending_cache 
+            WHERE chain = 'sol' AND fetched_at > ?
+        """, (threshold,))
+        rows = cursor.fetchall()
+        conn.close()
+        
+        tokens = []
+        for row in rows:
+            tokens.append(json.loads(row[0]))
+            
+        # Apply age filters if specified (client-side filtering)
+        if min_created or max_created:
+            filtered = []
+            for token in tokens:
+                created = token.get('creation_timestamp', 0)
+                if created > 0:
+                    age_seconds = int(time.time()) - int(created)
+                    age_days = age_seconds / 86400
+                    if min_created:
+                        min_days = parse_age(min_created)
+                        if age_days < min_days:
+                            continue
+                    if max_created:
+                        max_days = parse_age(max_created)
+                        if age_days > max_days:
+                            continue
+                filtered.append(token)
+            tokens = filtered
+            
+        if not tokens:
+            print("[Velocity Scalp] No trending tokens in cache yet, waiting for fetcher...")
+            
+        return tokens
     except Exception as e:
-        print(f"Error fetching trending from GMGN: {e}")
-        if 'result' in locals() and result.stderr:
-            print(f"CLI Error: {result.stderr}")
+        print(f"Error reading trending from cache: {e}")
         return []
+
+def parse_age(age_str):
+    """Parse age string like '3d' or '1h' to days"""
+    if age_str.endswith('d'):
+        return int(age_str[:-1])
+    elif age_str.endswith('h'):
+        return int(age_str[:-1]) / 24
+    elif age_str.endswith('m'):
+        return int(age_str[:-1]) / (24 * 60)
+    return 0
 
 def send_discord_message(content, embed=None):
     if not DISCORD_TOKEN or not VELOCITY_SCALPS_CHANNEL_ID:

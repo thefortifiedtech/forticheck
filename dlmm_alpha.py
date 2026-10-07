@@ -102,31 +102,64 @@ def send_discord_message(content, embed=None):
         print(f"Error sending to Discord: {e}")
 
 def get_gmgn_tokens():
-    """Fetch active tokens from GMGN Trenches"""
-    cmd = ["npx", "gmgn-cli", "market", "trenches", "--chain", "sol", "--type", "completed", "near_completion", "new_creation", "--limit", "30", "--raw"]
+    """Fetch active tokens from GMGN Trenches cache (populated by gmgn-fetcher service)"""
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        data = json.loads(result.stdout)
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
         
-        # Combine all categories
+        # Read from cache (90 second TTL)
+        threshold = int(time.time()) - 90
+        cursor.execute("""
+            SELECT data_json FROM gmgn_trenches_cache 
+            WHERE chain = 'sol' AND stage IN ('NEW_CREATION', 'FULL_ALERT') AND fetched_at > ?
+        """, (threshold,))
+        rows = cursor.fetchall()
+        conn.close()
+        
         all_tokens = []
-        for key in ["completed", "near_completion", "new_creation"]:
-            if key in data and isinstance(data[key], list):
-                all_tokens.extend(data[key])
-                
+        for row in rows:
+            all_tokens.append(json.loads(row[0]))
+            
+        if not all_tokens:
+            print("[DLMM Alpha] No tokens in cache yet, waiting for fetcher...")
+            
         return all_tokens
     except Exception as e:
-        print(f"Error fetching from GMGN: {e}")
+        print(f"Error reading from cache: {e}")
         return []
 
 def get_gmgn_trending():
-    """Fetch trending tokens from GMGN"""
-    cmd = ["npx", "gmgn-cli", "market", "trending", "--chain", "sol", "--interval", "1m", "--limit", "30", "--raw"]
+    """Fetch trending tokens from GMGN cache (populated by gmgn-fetcher service)"""
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        res_json = json.loads(result.stdout)
-        if "data" in res_json and "rank" in res_json["data"]:
-            return res_json["data"]["rank"]
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        
+        # Read from cache (90 second TTL)
+        threshold = int(time.time()) - 90
+        cursor.execute("""
+            SELECT data_json FROM gmgn_trending_cache 
+            WHERE chain = 'sol' AND fetched_at > ?
+        """, (threshold,))
+        rows = cursor.fetchall()
+        conn.close()
+        
+        tokens = []
+        for row in rows:
+            tokens.append(json.loads(row[0]))
+            
+        if not tokens:
+            print("[DLMM Alpha] No trending tokens in cache yet, waiting for fetcher...")
+            
+        return tokens
+    except Exception as e:
+        print(f"Error reading trending from cache: {e}")
+        return []
+    except subprocess.CalledProcessError as e:
+        if handle_rate_limit(e.stderr):
+            return []
+        print(f"Error fetching trending from GMGN: {e}")
+        if e.stderr:
+            print(f"CLI Error: {e.stderr}")
         return []
     except Exception as e:
         print(f"Error fetching trending from GMGN: {e}")
